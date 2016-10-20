@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import getpass
+import json
+import logging.config
+import os
+import tabulate
+import argparse
+
+from org.openbaton.cli.agents.agents import MainAgent
+
+logger = logging.getLogger("org.openbaton.cli.MainAgent")
+
+ACTIONS = ["list", "show", "delete", "create"]
+AGENTS = ["nsr", "nsd", "vnfpackage", "projects", "vim"]
+
+
+def exec_action(agent, agent_choice, action, project_id, *args):
+    if action not in ACTIONS:
+        print("Action %s unknown" % action)
+        exit(1)
+    if action == "list":
+        ag = agent.get_agent(agent_choice, project_id=project_id)
+        print(tabulate.tabulate(json.loads(ag.find()),  headers="keys", tablefmt="fancy_grid"))
+    if action == "delete":
+        if len(args) > 0:
+            _id = args[0]
+        else:
+            print("Delete takes one argument, the id")
+            exit(1)
+        agent.get_agent(agent_choice, project_id=project_id).delete(_id)
+    if action == "show":
+        if len(args) > 0:
+            _id = args[0]
+        else:
+            print("Show takes one argument, the id")
+            exit(1)
+        agent.get_agent(agent_choice, project_id=project_id).find(_id)
+    if action == "create":
+        if len(args) > 0:
+            obj = args[0]
+        else:
+            print("create takes one argument, the object to create")
+            exit(1)
+        agent.get_agent(agent_choice, project_id=project_id).create(obj)
+
+
+def openbaton(agent_choice, action, params, project_id, username, password):
+    agent = MainAgent(username=username, password=password)
+
+    # print(agent_choice, action, param)
+    exec_action(agent, agent_choice, action, project_id, params)
+
+
+# openbaton.add_param("agent", help="Agent to chose: [ nsd , nsr , vnfpackage ]", default="nsr", type=str)
+# openbaton.add_param("action", help="Action to execute: [ list , show , create, delete ]", default="", type=str)
+# openbaton.add_param("param", help="Parameter such as id or path to json file or json representation", default="", type=str)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p_id", "--project-id", help="the project-id to use")
+    parser.add_argument("-u", "--username", help="the openbaton username")
+    parser.add_argument("-p", "--passowrd", help="the openbaton password")
+    parser.add_argument("agent", help="the agent you want to use")
+    parser.add_argument("action", help="the action you want to call")
+    parser.add_argument("params", help="the action you want to call", nargs='*')
+    args = parser.parse_args()
+    project_id = os.environ.get('OB_PROJECT_ID')
+    username = os.environ.get('OB_USERNAME')
+    password = os.environ.get('OB_PASSWORD')
+
+    if project_id is None:
+        project_id = raw_input("insert project-id: ")
+    if username is None or username == "":
+        username = raw_input("insert user: ")
+    if password is None or password == "":
+        password = print("insert password: ", getpass.getpass())
+    # conf = "logging.conf"
+    # logging.config.fileConfig('logging.conf')
+    # logger.debug("Heyla")
+    #
+    # projects = agent.get_project_agent().find()
+    # logger.debug("projects: %s" % projects)
+    # logger.info("Found %s projects" % len(projects))
+    #
+    # for project in projects:
+    #     print("----------")
+    #     print(
+    #         "Vim names: %s" % [vim.get("name") for vim in
+    #                            agent.get_vim_instance_agent(project_id=project["id"]).find()])
+    #     print('----------')
+    #     print("NSD names: %s" % [nsd.get("name") for nsd in
+    #                              agent.get_ns_descriptor_agent(project_id=project["id"]).find()])
+    #     print("----------")
+    #     records_agent = agent.get_ns_records_agent(project_id=project["id"])
+    #     for nsr in records_agent.find():
+    #         records_agent.delete(nsr.get("id"))
+    #     print("----------")
+    #
+    #     vnf_package_agent = agent.get_vnf_package_agent(project["id"])
+    #     print(vnf_package_agent.create("/opt/openbaton/openIMS-packages/tars/bind9.tar"))
+    openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password)
