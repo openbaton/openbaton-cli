@@ -16,6 +16,14 @@ logger = logging.getLogger("org.openbaton.cli.MainAgent")
 ACTIONS = ["list", "show", "delete", "create"]
 AGENTS = ["nsr", "nsd", "vnfpackage", "projects", "vim"]
 
+PRINT_KEY = {
+    "nsd": ["id", "name"],
+    "nsr": ["id", "name"],
+    "vim": ["id", "name"],
+    "project": ["id", "name", "description"],
+    "vnfpackage": ["id", "name"],
+}
+
 
 def exec_action(agent, agent_choice, action, project_id, *args):
     if action not in ACTIONS:
@@ -23,7 +31,8 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         exit(1)
     if action == "list":
         ag = agent.get_agent(agent_choice, project_id=project_id)
-        print(tabulate.tabulate(json.loads(ag.find()),  headers="keys", tablefmt="fancy_grid"))
+        print
+        print(tabulate.tabulate(get_result_as_list(ag, agent_choice), headers=PRINT_KEY.get(agent_choice), tablefmt="fancy_grid"))
     if action == "delete":
         if len(args) > 0:
             _id = args[0]
@@ -47,16 +56,22 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         agent.get_agent(agent_choice, project_id=project_id).create(obj)
 
 
+def get_result_as_list(main_agent, agent):
+    res = []
+    for x in json.loads(main_agent.find()):
+        tmp = []
+        for key in PRINT_KEY.get(agent):
+            tmp.append(x.get(key))
+        res.append(tmp)
+    return res
+
+
 def openbaton(agent_choice, action, params, project_id, username, password):
     agent = MainAgent(username=username, password=password)
 
     # print(agent_choice, action, param)
     exec_action(agent, agent_choice, action, project_id, params)
 
-
-# openbaton.add_param("agent", help="Agent to chose: [ nsd , nsr , vnfpackage ]", default="nsr", type=str)
-# openbaton.add_param("action", help="Action to execute: [ list , show , create, delete ]", default="", type=str)
-# openbaton.add_param("param", help="Parameter such as id or path to json file or json representation", default="", type=str)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
