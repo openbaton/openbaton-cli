@@ -46,7 +46,7 @@ class RestClient(object):
         if self.project_id is not None:
             headers["project-id"] = self.project_id
         final_url = self.ob_url + url
-        # print "executing get on url %s, with headers: %s" % (final_url, headers)
+        logger.debug("executing get on url %s, with headers: %s" % (final_url, headers))
         response = requests.get(final_url, headers=headers)
         result = response.text
         if _expired_token(result):
@@ -65,7 +65,7 @@ class RestClient(object):
             headers["project-id"] = self.project_id
 
         headers["Authorization"] = "Bearer %s" % self.token
-
+        logger.debug("executing POST on url %s, with headers: %s" % (self.ob_url + url, headers))
         response = requests.post(self.ob_url + url, data=body, headers=headers)
 
         if _expired_token(response.text):
@@ -85,7 +85,7 @@ class RestClient(object):
         files = {'file': ('file', _file, "multipart/form-data")}
 
         ses = requests.session()
-
+        logger.debug("executing POST on url %s, with headers: %s" % (self.ob_url + url, headers))
         response = ses.post(self.ob_url + url, files=files, headers=headers)
         return response.text
 
@@ -97,6 +97,7 @@ class RestClient(object):
         if self.project_id is not None:
             headers["project-id"] = self.project_id
         headers["Authorization"] = "Bearer %s" % self.token
+        logger.debug("executing PUT on url %s, with headers: %s" % (self.ob_url + url, headers))
         response = requests.put(self.ob_url + url, data=body, headers=headers)
         if _expired_token(response.text):
             self.token = self._get_token()
@@ -110,6 +111,7 @@ class RestClient(object):
         if self.project_id is not None:
             headers = {"project-id": self.project_id}
         headers["Authorization"] = "Bearer %s" % self.token
+        logger.debug("executing DELETE on url %s, with headers: %s" % (self.ob_url + url, headers))
         (resp_headers, content) = self.client.request(self.ob_url + url, "DELETE", headers=headers)
         if _expired_token(content):
             self.token = self._get_token()
@@ -117,15 +119,15 @@ class RestClient(object):
         return content
 
     def _get_token(self):
-        logger.debug("Executing post: %s" % (self.base_url + "oauth/token"))
+        # logger.debug("Executing post: %s" % (self.base_url + "oauth/token"))
         h = {"Authorization": "Basic %s" % base64.b64encode("openbatonOSClient:secret"),
              "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"}
-        logger.debug("Headers are: %s" % h)
+        # logger.debug("Headers are: %s" % h)
         response = requests.post(self.base_url + "oauth/token",
                                  headers=h,
                                  data="username=%s&password=%s&grant_type=password" % (
                                      self.username, self.password))
-        logger.debug(response.text)
+        # logger.debug(response.text)
         token = json.loads(response.text).get("value")
         logger.debug("Got token %s" % token)
         return token

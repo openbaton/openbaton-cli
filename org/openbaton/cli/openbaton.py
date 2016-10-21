@@ -143,10 +143,12 @@ def openbaton(agent_choice, action, params, project_id, username, password, nfvo
 
 
 def start():
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-pid", "--project-id", help="the project-id to use")
     parser.add_argument("-u", "--username", help="the openbaton username")
     parser.add_argument("-p", "--password", help="the openbaton password")
+    parser.add_argument("-d", "--debug", help="show debug prints", action="store_true")
     parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip", default="localhost")
     parser.add_argument("--nfvo-port", help="the openbaton nfvo port", default="8080")
 
@@ -156,6 +158,10 @@ def start():
 
     args = parser.parse_args()
 
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        print()
+
     project_id = os.environ.get('OB_PROJECT_ID')
     username = os.environ.get('OB_USERNAME')
     password = os.environ.get('OB_PASSWORD')
@@ -163,9 +169,9 @@ def start():
     nfvo_port = os.environ.get('OB_NFVO_PORT')
 
     if args.username is not None:
-        username = args.get("username")
+        username = args.username
     if args.password is not None:
-        password = args.get("password")
+        password = args.password
     if args.nfvo_ip is not None:
         nfvo_ip = args.nfvo_ip
     if args.nfvo_port is not None:
@@ -184,12 +190,12 @@ def start():
     if password is None or password == "":
         password = getpass.getpass("insert password: ")
 
-    # print('')
-    # print("username '%s'" % username)
+
+    logger.debug("username '%s'" % username)
     # print("password '%s'" % password)
-    # print("project_id '%s'" % project_id)
-    # print("nfvo_ip '%s'" % nfvo_ip)
-    # print("nfvo_port '%s'" % nfvo_port)
+    logger.debug("project_id '%s'" % project_id)
+    logger.debug("nfvo_ip '%s'" % nfvo_ip)
+    logger.debug("nfvo_port '%s'" % nfvo_port)
 
     if username is None or password is None or username == "" or password == "":
         print("")
