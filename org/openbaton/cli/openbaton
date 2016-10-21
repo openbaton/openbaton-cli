@@ -78,7 +78,8 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         print(" ")
     if action == "create":
         if len(args) > 0:
-            obj = args[0]
+            obj = args[0][0]
+            print(obj)
         else:
             print("create takes one argument, the object to create")
             exit(1)
@@ -125,8 +126,8 @@ def get_result_as_list_find_all(start_list, agent):
     return res
 
 
-def openbaton(agent_choice, action, params, project_id, username, password):
-    agent = MainAgent(username=username, password=password)
+def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port):
+    agent = MainAgent(username=username, password=password, nfvo_ip=nfvo_ip,nfvo_port=nfvo_port)
 
     # print(agent_choice, action, param)
     exec_action(agent, agent_choice, action, project_id, params)
@@ -144,11 +145,17 @@ if __name__ == '__main__':
     project_id = os.environ.get('OB_PROJECT_ID')
     username = os.environ.get('OB_USERNAME')
     password = os.environ.get('OB_PASSWORD')
+    nfvo_ip = os.environ.get('OB_NFVO_IP')
+    nfvo_port = os.environ.get('OB_NFVO_PORT')
 
     if project_id is None:
         project_id = raw_input("insert project-id: ")
     if username is None or username == "":
         username = raw_input("insert user: ")
+    if nfvo_ip is None or nfvo_ip == "":
+        nfvo_ip = raw_input("insert nfvo_ip: ")
+    if nfvo_port is None or nfvo_port == "":
+        nfvo_port = raw_input("insert nfvo_port: ")
     if password is None or password == "":
         password = print("insert password: ", getpass.getpass())
     # conf = "logging.conf"
@@ -175,4 +182,4 @@ if __name__ == '__main__':
     #
     #     vnf_package_agent = agent.get_vnf_package_agent(project["id"])
     #     print(vnf_package_agent.create("/opt/openbaton/openIMS-packages/tars/bind9.tar"))
-    openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password)
+    openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password, nfvo_ip=nfvo_ip, nfvo_port=nfvo_port)
