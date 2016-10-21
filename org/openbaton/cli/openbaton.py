@@ -191,6 +191,12 @@ def start():
     # print("nfvo_ip '%s'" % nfvo_ip)
     # print("nfvo_port '%s'" % nfvo_port)
 
+    if username is None or password is None or username == "" or password == "":
+        print("")
+        print("Error: username and/or password are empty")
+        print("")
+        exit(2)
+
     openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password,
               nfvo_ip=nfvo_ip, nfvo_port=nfvo_port)
 
