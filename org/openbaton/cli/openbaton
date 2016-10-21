@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import texttable
 import getpass
 import json
 import logging.config
@@ -14,14 +15,23 @@ from org.openbaton.cli.agents.agents import MainAgent
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
 ACTIONS = ["list", "show", "delete", "create"]
-AGENTS = ["nsr", "nsd", "vnfpackage", "projects", "vim"]
 
-PRINT_KEY = {
-    "nsd": ["id", "name"],
-    "nsr": ["id", "name"],
-    "vim": ["id", "name"],
+LIST_PRINT_KEY = {
+    "nsd": ["id", "name", "vendor", "version"],
+    "nsr": ["id", "name", "status", "task", "vendor", "version", ],
+    "vim": ["id", "name", "authUrl", "tenant", "username"],
     "project": ["id", "name", "description"],
     "vnfpackage": ["id", "name"],
+    "user": ["id", "username", "email"],
+}
+
+SHOW_EXCLUDE_KEY = {
+    "nsd": [],
+    "nsr": [],
+    "vim": ["password"],
+    "project": [],
+    "vnfpackage": [],
+    "user": ["password"],
 }
 
 
@@ -29,10 +39,16 @@ def exec_action(agent, agent_choice, action, project_id, *args):
     if action not in ACTIONS:
         print("Action %s unknown" % action)
         exit(1)
+    if agent_choice not in LIST_PRINT_KEY.keys():
+        print("agent %s unknown" % agent_choice)
+        exit(1)
     if action == "list":
         ag = agent.get_agent(agent_choice, project_id=project_id)
-        print
-        print(tabulate.tabulate(get_result_as_list(ag, agent_choice), headers=PRINT_KEY.get(agent_choice), tablefmt="fancy_grid"))
+        print(" ")
+        print(tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
+                                headers=LIST_PRINT_KEY.get(agent_choice),
+                                tablefmt="fancy_grid"))
+        print(" ")
     if action == "delete":
         if len(args) > 0:
             _id = args[0]
@@ -40,27 +56,70 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             print("Delete takes one argument, the id")
             exit(1)
         agent.get_agent(agent_choice, project_id=project_id).delete(_id)
+        print("Executed delete.")
     if action == "show":
         if len(args) > 0:
             _id = args[0]
         else:
             print("Show takes one argument, the id")
             exit(1)
-        agent.get_agent(agent_choice, project_id=project_id).find(_id)
+        print(" ")
+        table = texttable.Texttable()
+        table.set_cols_align(["l", "r"])
+        table.set_cols_valign(["c", "b"])
+        table.set_cols_dtype(['t', 't'])
+        table.add_rows(
+            get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]),
+                               agent_choice))
+        print(table.draw() + "\n")
+        # print(tabulate.tabulate(
+        #     get_result_as_list_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]), agent_choice),
+        #     tablefmt="plain"))
+        print(" ")
     if action == "create":
         if len(args) > 0:
             obj = args[0]
         else:
             print("create takes one argument, the object to create")
             exit(1)
-        agent.get_agent(agent_choice, project_id=project_id).create(obj)
+        table = texttable.Texttable()
+        # table.set_deco(texttable.Texttable.HEADER)
+        table.set_cols_align(["l", "r"])
+        table.set_cols_valign(["c", "b"])
+        table.set_cols_dtype(['t', 't'])
+        table.add_rows(
+            get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(obj), agent_choice))
 
 
-def get_result_as_list(main_agent, agent):
+def get_result_to_show(obj, agent_choice):
+    obj = json.loads(obj)
+    result = [["key", "value"]]
+    # result = ["key", "value"]
+    for k, v in obj.iteritems():
+        if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
+            if isinstance(v, list):
+                if len(v) > 0:
+                    tmp = []
+                    if isinstance(v[0], dict):
+                        # tmp.append("--------------------------------------")
+                        tmp.extend(["- " + x.get("id") for x in v])
+                        # tmp.append("--------------------------------------")
+                    # print("appending %s" % tmp)
+                    result.append([k, "\n".join(tmp)])
+            else:
+                if isinstance(v, dict):
+                    result.append([k, v.get("id")])
+                else:
+                    result.append([k, v])
+
+    return result
+
+
+def get_result_as_list_find_all(start_list, agent):
     res = []
-    for x in json.loads(main_agent.find()):
+    for x in json.loads(start_list):
         tmp = []
-        for key in PRINT_KEY.get(agent):
+        for key in LIST_PRINT_KEY.get(agent):
             tmp.append(x.get(key))
         res.append(tmp)
     return res

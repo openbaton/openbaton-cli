@@ -48,7 +48,7 @@ class RestClient(object):
         if self.project_id is not None:
             headers["project-id"] = self.project_id
         final_url = self.ob_url + url
-        logger.debug("executing get on url %s, with headers: %s" % (final_url, headers))
+        # print "executing get on url %s, with headers: %s" % (final_url, headers)
         response = requests.get(final_url, headers=headers)
         if _expired_token(response.text):
             self.token = self._get_token()
