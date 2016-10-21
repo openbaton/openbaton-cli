@@ -26,6 +26,7 @@ How to use the Open Baton CLI
 After installing the CLI you have a new command:
 
 .. code:: bash
+
     ./openbaton -h                                                                                                                                                                                                                                                                                                                                                  2 ↵
     usage: openbaton [-h] [-pid PROJECT_ID] [-u USERNAME] [-p PASSWORD]
                      [-ip NFVO_IP] [--nfvo-port NFVO_PORT]
