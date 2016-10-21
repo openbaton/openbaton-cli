@@ -1,0 +1,15 @@
+#!/bin/bash
+
+unset OB_NFVO_IP
+unset OB_NFVO_PORT
+unset OB_NFVO_PORT
+unset OB_USERNAME
+unset OB_PASSWORD
+
+export OB_NFVO_IP=loclahost
+export OB_NFVO_PORT=8080
+export OB_PROJECT_ID=
+export OB_USERNAME=admin
+echo -n Insert Open Baton Password: 
+read -s password
+export OB_PASSWORD=$password
