@@ -52,6 +52,54 @@ After installing the CLI you have a new command:
       --nfvo-port NFVO_PORT
                             the openbaton nfvo port
 
+
+Where the agents are:
+
++------------+------------------+
+| Agent      | description      |
++============+==================+
+| nsd        | Agent requesting |
+|            | Network Service  |
+|            | Descriptor       |
++------------+------------------+
+| nsr        | Agent requesting |
+|            | Network Service  |
+|            | Records          |
++------------+------------------+
+| projects   | Agent requesting |
+|            | Projects         |
++------------+------------------+
+| vim        | Agent requesting |
+|            | Point of         |
+|            | Presence         |
++------------+------------------+
+| user       | Agent requesting |
+|            | Users            |
++------------+------------------+
+| vnfpackages| Agent requesting |
+|            | VNFPAckages      |
++------------+------------------+
+
+And actions are:
+
++------------+------------------+
+| action     | description      |
++============+==================+
+| list       | Request the list |
+|            | of agent's       |
+|            | objects          |
++------------+------------------+
+| show       | Show specific    |
+|            | information of   |
+|            | an object        |
++------------+------------------+
+| create     | create the passed|
+|            | object           |
++------------+------------------+
+| update     | update the passed|
+|            | object           |
++------------+------------------+
+
 Issue tracker
 -------------
 
