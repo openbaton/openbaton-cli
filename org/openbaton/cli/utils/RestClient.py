@@ -31,11 +31,9 @@ class RestClient(object):
 
         self.project_id = project_id
         self.token = None
-        if username is not None and password is not None:
-            self.username = username
-            self.password = password
-            logger.debug("authenticating user %s" % username)
-            # self.client.add_credentials(username, password)
+        self.username = username
+        self.password = password
+        # print "user %s" % username
 
     def get(self, url):
         if self.token is None:
@@ -50,10 +48,13 @@ class RestClient(object):
         final_url = self.ob_url + url
         # print "executing get on url %s, with headers: %s" % (final_url, headers)
         response = requests.get(final_url, headers=headers)
-        if _expired_token(response.text):
+        result = response.text
+        if _expired_token(result):
             self.token = self._get_token()
             self.get(url)
-        return response.text
+        if result == "":
+            result = '{"error":"Not found"}'
+        return result
 
     def post(self, url, body, headers=None):
         if self.token is None:
@@ -66,6 +67,7 @@ class RestClient(object):
         headers["Authorization"] = "Bearer %s" % self.token
 
         response = requests.post(self.ob_url + url, data=body, headers=headers)
+
         if _expired_token(response.text):
             self.token = self._get_token()
             self.post(url, body, headers=headers)

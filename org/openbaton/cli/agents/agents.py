@@ -19,7 +19,7 @@ class BaseAgent(object):
     def update(self, _id, entity):
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
-            return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity)))
+            return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(json.loads(entity))))
         else:
             with open(entity) as f:
                 return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(f.read().replace('\n', ''))))
@@ -27,7 +27,8 @@ class BaseAgent(object):
     def create(self, entity, _id=""):
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
-            return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(entity)))
+            result = json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(json.loads(entity))))
+            return result
         else:
             with open(entity) as f:
                 return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(f.read().replace('\n', ''))))
@@ -65,14 +66,23 @@ class VNFPackageAgent(BaseAgent):
 class MainAgent(object):
     def __init__(self, nfvo_ip="localhost", nfvo_port="8080", https=False, version=1, username=None, password=None,
                  project_id=None):
+        # print
+        # print username
+        # print
         self.nfvo_ip = nfvo_ip
         self.nfvo_port = nfvo_port
         self.https = https
         self.version = version
         self.username = username
+
         self.password = password
-        self._client = RestClient(nfvo_ip=nfvo_ip, nfvo_port=nfvo_port, https=https, version=version, username=username,
-                                  password=password, project_id=project_id)
+        self._client = RestClient(nfvo_ip=self.nfvo_ip,
+                                  nfvo_port=self.nfvo_port,
+                                  https=self.https,
+                                  version=self.version,
+                                  username=self.username,
+                                  password=self.password,
+                                  project_id=project_id)
 
         self._project_agent = None
         self._vim_instance_agent = None

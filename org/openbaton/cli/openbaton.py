@@ -31,7 +31,7 @@ SHOW_EXCLUDE_KEY = {
     "vim": ["password"],
     "project": [],
     "vnfpackage": [],
-    "user": ["password"],
+    "user": ["password"]
 }
 
 
@@ -44,10 +44,10 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         exit(1)
     if action == "list":
         ag = agent.get_agent(agent_choice, project_id=project_id)
+        tabulate_tabulate = tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
+                                              headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
         print(" ")
-        print(tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
-                                headers=LIST_PRINT_KEY.get(agent_choice),
-                                tablefmt="fancy_grid"))
+        print(tabulate_tabulate)
         print(" ")
     if action == "delete":
         if len(args) > 0:
@@ -63,7 +63,6 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         else:
             print("Show takes one argument, the id")
             exit(1)
-        print(" ")
         table = texttable.Texttable()
         table.set_cols_align(["l", "r"])
         table.set_cols_valign(["c", "b"])
@@ -71,45 +70,49 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         table.add_rows(
             get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]),
                                agent_choice))
+        print(" ")
         print(table.draw() + "\n")
         # print(tabulate.tabulate(
         #     get_result_as_list_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]), agent_choice),
         #     tablefmt="plain"))
         print(" ")
     if action == "create":
-        if len(args) > 0:
-            obj = args[0][0]
-            print(obj)
+        if len(args[0]) > 0:
+            params = args[0]
         else:
             print("create takes one argument, the object to create")
             exit(1)
         table = texttable.Texttable()
-        # table.set_deco(texttable.Texttable.HEADER)
         table.set_cols_align(["l", "r"])
         table.set_cols_valign(["c", "b"])
         table.set_cols_dtype(['t', 't'])
         table.add_rows(
-            get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(obj), agent_choice))
+            get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(params[0]),
+                               agent_choice))
+        print("\n")
+        print(table.draw() + "\n\n")
 
 
 def get_result_to_show(obj, agent_choice):
-    obj = json.loads(obj)
+    if isinstance(obj, str) or type(obj) == unicode:
+        obj = json.loads(obj)
     result = [["key", "value"]]
-    # result = ["key", "value"]
     for k, v in obj.iteritems():
         if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
             if isinstance(v, list):
                 if len(v) > 0:
                     tmp = []
                     if isinstance(v[0], dict):
-                        # tmp.append("--------------------------------------")
+                        tmp.append("ids:\n")
                         tmp.extend(["- " + x.get("id") for x in v])
-                        # tmp.append("--------------------------------------")
                     # print("appending %s" % tmp)
                     result.append([k, "\n".join(tmp)])
             else:
                 if isinstance(v, dict):
-                    result.append([k, v.get("id")])
+                    idName = v.get("name")
+                    if idName is None:
+                        idName = v.get("id")
+                    result.append([k, idName])
                 else:
                     result.append([k, v])
 
@@ -126,27 +129,49 @@ def get_result_as_list_find_all(start_list, agent):
     return res
 
 
-def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port):
-    agent = MainAgent(username=username, password=password, nfvo_ip=nfvo_ip,nfvo_port=nfvo_port)
+def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port, https=False):
+    agent = MainAgent(nfvo_ip=nfvo_ip,
+                      nfvo_port=nfvo_port,
+                      https=https,
+                      version=1,
+                      username=username,
+                      password=password,
+                      project_id=project_id)
 
-    # print(agent_choice, action, param)
+    # print(agent_choice, action, params)
     exec_action(agent, agent_choice, action, project_id, params)
 
 
-if __name__ == '__main__':
+def start():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p_id", "--project-id", help="the project-id to use")
+    parser.add_argument("-pid", "--project-id", help="the project-id to use")
     parser.add_argument("-u", "--username", help="the openbaton username")
-    parser.add_argument("-p", "--passowrd", help="the openbaton password")
-    parser.add_argument("agent", help="the agent you want to use")
-    parser.add_argument("action", help="the action you want to call")
-    parser.add_argument("params", help="the action you want to call", nargs='*')
+    parser.add_argument("-p", "--password", help="the openbaton password")
+    parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip", default="localhost")
+    parser.add_argument("--nfvo-port", help="the openbaton nfvo port", default="8080")
+
+    parser.add_argument("agent", help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()))
+    parser.add_argument("action", help="the action you want to call. Possibilities are: \n" + str(ACTIONS))
+    parser.add_argument("params", help="The id, file or json", nargs='*')
+
     args = parser.parse_args()
+
     project_id = os.environ.get('OB_PROJECT_ID')
     username = os.environ.get('OB_USERNAME')
     password = os.environ.get('OB_PASSWORD')
     nfvo_ip = os.environ.get('OB_NFVO_IP')
     nfvo_port = os.environ.get('OB_NFVO_PORT')
+
+    if args.username is not None:
+        username = args.get("username")
+    if args.password is not None:
+        password = args.get("password")
+    if args.nfvo_ip is not None:
+        nfvo_ip = args.nfvo_ip
+    if args.nfvo_port is not None:
+        nfvo_port = args.nfvo_port
+    if args.project_id is not None:
+        project_id = args.project_id
 
     if project_id is None:
         project_id = raw_input("insert project-id: ")
@@ -157,29 +182,18 @@ if __name__ == '__main__':
     if nfvo_port is None or nfvo_port == "":
         nfvo_port = raw_input("insert nfvo_port: ")
     if password is None or password == "":
-        password = print("insert password: ", getpass.getpass())
-    # conf = "logging.conf"
-    # logging.config.fileConfig('logging.conf')
-    # logger.debug("Heyla")
-    #
-    # projects = agent.get_project_agent().find()
-    # logger.debug("projects: %s" % projects)
-    # logger.info("Found %s projects" % len(projects))
-    #
-    # for project in projects:
-    #     print("----------")
-    #     print(
-    #         "Vim names: %s" % [vim.get("name") for vim in
-    #                            agent.get_vim_instance_agent(project_id=project["id"]).find()])
-    #     print('----------')
-    #     print("NSD names: %s" % [nsd.get("name") for nsd in
-    #                              agent.get_ns_descriptor_agent(project_id=project["id"]).find()])
-    #     print("----------")
-    #     records_agent = agent.get_ns_records_agent(project_id=project["id"])
-    #     for nsr in records_agent.find():
-    #         records_agent.delete(nsr.get("id"))
-    #     print("----------")
-    #
-    #     vnf_package_agent = agent.get_vnf_package_agent(project["id"])
-    #     print(vnf_package_agent.create("/opt/openbaton/openIMS-packages/tars/bind9.tar"))
-    openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password, nfvo_ip=nfvo_ip, nfvo_port=nfvo_port)
+        password = getpass.getpass("insert password: ")
+
+    # print('')
+    # print("username '%s'" % username)
+    # print("password '%s'" % password)
+    # print("project_id '%s'" % project_id)
+    # print("nfvo_ip '%s'" % nfvo_ip)
+    # print("nfvo_port '%s'" % nfvo_port)
+
+    openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password,
+              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port)
+
+
+if __name__ == '__main__':
+    print("Open Baton fancy CLI :)")

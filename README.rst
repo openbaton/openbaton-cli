@@ -23,7 +23,33 @@ The easier way to start is to use a `virtual environment <https://virtualenv.pyp
 How to use the Open Baton CLI
 -----------------------------
 
-... work in progress
+After installing the CLI you have a new command:
+
+.. code:: bash
+    ./openbaton -h                                                                                                                                                                                                                                                                                                                                                  2 ↵
+    usage: openbaton [-h] [-pid PROJECT_ID] [-u USERNAME] [-p PASSWORD]
+                     [-ip NFVO_IP] [--nfvo-port NFVO_PORT]
+                     agent action [params [params ...]]
+
+    positional arguments:
+      agent                 the agent you want to use. Possibilities are: ['nsd',
+                            'vim', 'project', 'user', 'vnfpackage', 'nsr']
+      action                the action you want to call. Possibilities are:
+                            ['list', 'show', 'delete', 'create']
+      params                The id, file or json
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -pid PROJECT_ID, --project-id PROJECT_ID
+                            the project-id to use
+      -u USERNAME, --username USERNAME
+                            the openbaton username
+      -p PASSWORD, --password PASSWORD
+                            the openbaton password
+      -ip NFVO_IP, --nfvo-ip NFVO_IP
+                            the openbaton nfvo ip
+      --nfvo-port NFVO_PORT
+                            the openbaton nfvo port
 
 Issue tracker
 -------------
