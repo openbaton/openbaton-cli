@@ -3,6 +3,7 @@ import json
 import logging
 
 import requests
+from org.openbaton.cli.errors.errors import WrongCredential
 
 logger = logging.getLogger("org.openbaton.cli.RestClient")
 
@@ -49,6 +50,7 @@ class RestClient(object):
         logger.debug("executing get on url %s, with headers: %s" % (final_url, headers))
         response = requests.get(final_url, headers=headers)
         result = response.text
+        # logger.debug(response.text)
         if _expired_token(result):
             self.token = self._get_token()
             self.get(url)
@@ -128,6 +130,10 @@ class RestClient(object):
                                  data="username=%s&password=%s&grant_type=password" % (
                                      self.username, self.password))
         # logger.debug(response.text)
-        token = json.loads(response.text).get("value")
+        res_dict = json.loads(response.text)
+        token = res_dict.get("value")
         logger.debug("Got token %s" % token)
+        if token is None:
+            if res_dict.get("detailMessage") is not None:
+                raise WrongCredential("Invalid credential!")
         return token

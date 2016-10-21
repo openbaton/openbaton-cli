@@ -11,6 +11,7 @@ import tabulate
 import argparse
 
 from org.openbaton.cli.agents.agents import MainAgent
+from org.openbaton.cli.errors.errors import WrongCredential
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
@@ -36,61 +37,64 @@ SHOW_EXCLUDE_KEY = {
 
 
 def exec_action(agent, agent_choice, action, project_id, *args):
-    if action not in ACTIONS:
-        print("Action %s unknown" % action)
-        exit(1)
-    if agent_choice not in LIST_PRINT_KEY.keys():
-        print("agent %s unknown" % agent_choice)
-        exit(1)
-    if action == "list":
-        ag = agent.get_agent(agent_choice, project_id=project_id)
-        tabulate_tabulate = tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
-                                              headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
-        print(" ")
-        print(tabulate_tabulate)
-        print(" ")
-    if action == "delete":
-        if len(args) > 0:
-            _id = args[0]
-        else:
-            print("Delete takes one argument, the id")
+    try:
+        if action not in ACTIONS:
+            print("Action %s unknown" % action)
             exit(1)
-        agent.get_agent(agent_choice, project_id=project_id).delete(_id)
-        print("Executed delete.")
-    if action == "show":
-        if len(args) > 0:
-            _id = args[0]
-        else:
-            print("Show takes one argument, the id")
+        if agent_choice not in LIST_PRINT_KEY.keys():
+            print("agent %s unknown" % agent_choice)
             exit(1)
-        table = texttable.Texttable()
-        table.set_cols_align(["l", "r"])
-        table.set_cols_valign(["c", "b"])
-        table.set_cols_dtype(['t', 't'])
-        table.add_rows(
-            get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]),
-                               agent_choice))
-        print(" ")
-        print(table.draw() + "\n")
-        # print(tabulate.tabulate(
-        #     get_result_as_list_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]), agent_choice),
-        #     tablefmt="plain"))
-        print(" ")
-    if action == "create":
-        if len(args[0]) > 0:
-            params = args[0]
-        else:
-            print("create takes one argument, the object to create")
-            exit(1)
-        table = texttable.Texttable()
-        table.set_cols_align(["l", "r"])
-        table.set_cols_valign(["c", "b"])
-        table.set_cols_dtype(['t', 't'])
-        table.add_rows(
-            get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(params[0]),
-                               agent_choice))
-        print("\n")
-        print(table.draw() + "\n\n")
+        if action == "list":
+            ag = agent.get_agent(agent_choice, project_id=project_id)
+            tabulate_tabulate = tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
+                                                  headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
+            print(" ")
+            print(tabulate_tabulate)
+            print(" ")
+        if action == "delete":
+            if len(args) > 0:
+                _id = args[0]
+            else:
+                print("Delete takes one argument, the id")
+                exit(1)
+            agent.get_agent(agent_choice, project_id=project_id).delete(_id)
+            print("Executed delete.")
+        if action == "show":
+            if len(args) > 0:
+                _id = args[0]
+            else:
+                print("Show takes one argument, the id")
+                exit(1)
+            table = texttable.Texttable()
+            table.set_cols_align(["l", "r"])
+            table.set_cols_valign(["c", "b"])
+            table.set_cols_dtype(['t', 't'])
+            table.add_rows(
+                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]),
+                                   agent_choice))
+            print(" ")
+            print(table.draw() + "\n")
+            # print(tabulate.tabulate(
+            #     get_result_as_list_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]), agent_choice),
+            #     tablefmt="plain"))
+            print(" ")
+        if action == "create":
+            if len(args[0]) > 0:
+                params = args[0]
+            else:
+                print("create takes one argument, the object to create")
+                exit(1)
+            table = texttable.Texttable()
+            table.set_cols_align(["l", "r"])
+            table.set_cols_valign(["c", "b"])
+            table.set_cols_dtype(['t', 't'])
+            table.add_rows(
+                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(params[0]),
+                                   agent_choice))
+            print("\n")
+            print(table.draw() + "\n\n")
+    except WrongCredential as e:
+        print("ERROR: %s" % e.message)
 
 
 def get_result_to_show(obj, agent_choice):
@@ -143,7 +147,6 @@ def openbaton(agent_choice, action, params, project_id, username, password, nfvo
 
 
 def start():
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-pid", "--project-id", help="the project-id to use")
     parser.add_argument("-u", "--username", help="the openbaton username")
@@ -189,7 +192,6 @@ def start():
         nfvo_port = raw_input("insert nfvo_port: ")
     if password is None or password == "":
         password = getpass.getpass("insert password: ")
-
 
     logger.debug("username '%s'" % username)
     # print("password '%s'" % password)
