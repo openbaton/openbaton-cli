@@ -1,5 +1,7 @@
+from __future__ import print_function
 import json
 import os
+from org.openbaton.cli.errors.errors import WrongParameters
 from org.openbaton.cli.utils.RestClient import RestClient
 
 
@@ -30,6 +32,8 @@ class BaseAgent(object):
             result = json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(json.loads(entity))))
             return result
         else:
+            if not os.path.isfile(entity):
+                raise WrongParameters("%s is not a file")
             with open(entity) as f:
                 return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(f.read().replace('\n', ''))))
 
@@ -45,6 +49,10 @@ class VimInstanceAgent(BaseAgent):
 
 
 class NSRAgent(BaseAgent):
+    def create(self, entity, _id="{}"):
+        entity = entity.strip()
+        return json.loads(self._client.post(self.url + "/%s" % entity, json.dumps(json.loads(_id))))
+
     def __init__(self, client, project_id):
         super(NSRAgent, self).__init__(client, "ns-records", project_id=project_id)
 
@@ -61,6 +69,59 @@ class VNFPackageAgent(BaseAgent):
     def create(self, entity, _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".tar"):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "r")))
+
+
+class SubAgent(BaseAgent):
+    def __init__(self, client, project_id, main_agent_url, main_agent, sub_url, sub_obj):
+        super(SubAgent, self).__init__(client, main_agent_url, project_id=project_id)
+        self.sub_obj = sub_obj
+        self._main_agent = main_agent
+        self.sub_url = sub_url
+
+    def update(self, _id, entity):
+        nsd_id = self._get_sub_obj_id_from_id(_id)
+        return super(SubAgent, self).update(nsd_id + "/" + self.sub_url + "/" + _id, entity)
+
+    def find(self, _id=""):
+        if _id is None or _id == "":
+            raise WrongParameters("Please provide the id, only action show is allowed on this agent")
+        nsd_id = self._get_sub_obj_id_from_id(_id)
+        return super(SubAgent, self).find(nsd_id + "/" + self.sub_url + "/" + _id)
+
+    def delete(self, _id):
+        nsd_id = self._get_sub_obj_id_from_id(_id)
+        super(SubAgent, self).delete(nsd_id + "/" + self.sub_url + "/" + _id)
+
+    def create(self, entity, _id=""):
+        if _id is None or _id == "":
+            raise WrongParameters("Please provide the id  of the object where to create this entity")
+        return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
+
+    def _get_sub_obj_id_from_id(self, _id):
+        for obj in json.loads(self._main_agent.find()):
+            for sub_obj in obj.get(self.sub_obj):
+                if sub_obj.get("id") == _id:
+                    return obj.get("id")
+
+
+class VNFDAgent(SubAgent):
+    def __init__(self, client, project_id):
+        super(VNFDAgent, self).__init__(client,
+                                        project_id,
+                                        "ns-descriptors",
+                                        NSDAgent(client, project_id),
+                                        "vnfdescriptors",
+                                        "vnfd")
+
+
+class VNFRAgent(SubAgent):
+    def __init__(self, client, project_id):
+        super(VNFRAgent, self).__init__(client,
+                                        project_id,
+                                        "ns-records",
+                                        NSRAgent(client, project_id),
+                                        "vnfrecords",
+                                        "vnfr")
 
 
 class MainAgent(object):
@@ -89,6 +150,8 @@ class MainAgent(object):
         self._ns_records_agent = None
         self._ns_descriptor_agent = None
         self._vnf_package_agent = None
+        self._vnf_descriptor_agent = None
+        self._vnf_record_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -113,6 +176,18 @@ class MainAgent(object):
         self._ns_descriptor_agent.project_id = project_id
         return self._ns_descriptor_agent
 
+    def get_vnfd_descriptor_agent(self, project_id):
+        if self._vnf_descriptor_agent is None:
+            self._vnf_descriptor_agent = VNFDAgent(self._client, project_id=project_id)
+        self._vnf_descriptor_agent.project_id = project_id
+        return self._vnf_descriptor_agent
+
+    def get_vnfr_descriptor_agent(self, project_id):
+        if self._vnf_record_agent is None:
+            self._vnf_record_agent = VNFRAgent(self._client, project_id=project_id)
+        self._vnf_record_agent.project_id = project_id
+        return self._vnf_record_agent
+
     def get_vnf_package_agent(self, project_id):
         if self._vnf_package_agent is None:
             self._vnf_package_agent = VNFPackageAgent(self._client, project_id=project_id)
@@ -124,6 +199,10 @@ class MainAgent(object):
             return self.get_ns_records_agent(project_id)
         if agent == "nsd":
             return self.get_ns_descriptor_agent(project_id)
+        if agent == "vnfd":
+            return self.get_vnfd_descriptor_agent(project_id)
+        if agent == "vnfr":
+            return self.get_vnfr_descriptor_agent(project_id)
         if agent == "vim":
             return self.get_vim_instance_agent(project_id)
         if agent == "vnfpackage":

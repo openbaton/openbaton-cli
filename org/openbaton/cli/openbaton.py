@@ -11,7 +11,7 @@ import tabulate
 import argparse
 
 from org.openbaton.cli.agents.agents import MainAgent
-from org.openbaton.cli.errors.errors import WrongCredential
+from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
@@ -19,7 +19,9 @@ ACTIONS = ["list", "show", "delete", "create"]
 
 LIST_PRINT_KEY = {
     "nsd": ["id", "name", "vendor", "version"],
+    "vnfd": ["id", "name", "vendor", "version"],
     "nsr": ["id", "name", "status", "task", "vendor", "version", ],
+    "vnfr": ["id", "name", "vendor", "version", "status"],
     "vim": ["id", "name", "authUrl", "tenant", "username"],
     "project": ["id", "name", "description"],
     "vnfpackage": ["id", "name"],
@@ -28,7 +30,9 @@ LIST_PRINT_KEY = {
 
 SHOW_EXCLUDE_KEY = {
     "nsd": [],
+    "vnfd": [],
     "nsr": [],
+    "vnfr": [],
     "vim": ["password"],
     "project": [],
     "vnfpackage": [],
@@ -94,7 +98,13 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             print("\n")
             print(table.draw() + "\n\n")
     except WrongCredential as e:
+        print("")
         print("ERROR: %s" % e.message)
+        print("")
+    except WrongParameters as e:
+        print("")
+        print("ERROR: %s" % e.message)
+        print("")
 
 
 def get_result_to_show(obj, agent_choice):
