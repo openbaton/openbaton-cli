@@ -11,7 +11,8 @@ import tabulate
 import argparse
 
 from org.openbaton.cli.agents.agents import MainAgent
-from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters
+from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException
+from requests import ConnectionError
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
@@ -56,16 +57,16 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             print(tabulate_tabulate)
             print(" ")
         if action == "delete":
-            if len(args) > 0:
-                _id = args[0]
+            if len(args[0]) > 0:
+                params = args[0]
             else:
                 print("Delete takes one argument, the id")
                 exit(1)
-            agent.get_agent(agent_choice, project_id=project_id).delete(_id)
+            agent.get_agent(agent_choice, project_id=project_id).delete(params[0])
             print("Executed delete.")
         if action == "show":
             if len(args) > 0:
-                _id = args[0]
+                params = args[0]
             else:
                 print("Show takes one argument, the id")
                 exit(1)
@@ -74,13 +75,10 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
             table.add_rows(
-                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]),
+                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(params[0]),
                                    agent_choice))
             print(" ")
             print(table.draw() + "\n")
-            # print(tabulate.tabulate(
-            #     get_result_as_list_show(agent.get_agent(agent_choice, project_id=project_id).find(_id[0]), agent_choice),
-            #     tablefmt="plain"))
             print(" ")
         if action == "create":
             if len(args[0]) > 0:
@@ -102,6 +100,14 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         print("ERROR: %s" % e.message)
         print("")
     except WrongParameters as e:
+        print("")
+        print("ERROR: %s" % e.message)
+        print("")
+    except ConnectionError as e:
+        print("")
+        print("ERROR: %s" % e.message)
+        print("")
+    except NfvoException as e:
         print("")
         print("ERROR: %s" % e.message)
         print("")

@@ -35,7 +35,8 @@ class BaseAgent(object):
             if not os.path.isfile(entity):
                 raise WrongParameters("%s is not a file")
             with open(entity) as f:
-                return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(f.read().replace('\n', ''))))
+                file_content = f.read().replace('\n', '')
+                return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(json.loads(file_content))))
 
 
 class ProjectAgent(BaseAgent):

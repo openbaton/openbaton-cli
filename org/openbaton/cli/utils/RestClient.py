@@ -3,9 +3,10 @@ import json
 import logging
 
 import requests
-from org.openbaton.cli.errors.errors import WrongCredential
+from org.openbaton.cli.errors.errors import WrongCredential, NfvoException
 
 logger = logging.getLogger("org.openbaton.cli.RestClient")
+WRONG_STATUS = [500, 404]
 
 
 def _expired_token(content):
@@ -56,6 +57,7 @@ class RestClient(object):
             self.get(url)
         if result == "":
             result = '{"error":"Not found"}'
+        self.check_answer(response)
         return result
 
     def post(self, url, body, headers=None):
@@ -73,6 +75,7 @@ class RestClient(object):
         if _expired_token(response.text):
             self.token = self._get_token()
             self.post(url, body, headers=headers)
+        self.check_answer(response)
         return response.text
 
     def post_file(self, url, _file, headers=None):
@@ -89,6 +92,7 @@ class RestClient(object):
         ses = requests.session()
         logger.debug("executing POST on url %s, with headers: %s" % (self.ob_url + url, headers))
         response = ses.post(self.ob_url + url, files=files, headers=headers)
+        self.check_answer(response)
         return response.text
 
     def put(self, url, body, headers=None):
@@ -104,6 +108,7 @@ class RestClient(object):
         if _expired_token(response.text):
             self.token = self._get_token()
             self.put(url, body=body, headers=headers)
+        self.check_answer(response)
         return response.text
 
     def delete(self, url):
@@ -114,10 +119,11 @@ class RestClient(object):
             headers = {"project-id": self.project_id}
         headers["Authorization"] = "Bearer %s" % self.token
         logger.debug("executing DELETE on url %s, with headers: %s" % (self.ob_url + url, headers))
-        (resp_headers, content) = self.client.request(self.ob_url + url, "DELETE", headers=headers)
+        content = requests.delete(self.ob_url + url, headers=headers)
         if _expired_token(content):
             self.token = self._get_token()
             self.delete(url)
+        self.check_answer(content)
         return content
 
     def _get_token(self):
@@ -137,3 +143,9 @@ class RestClient(object):
             if res_dict.get("detailMessage") is not None:
                 raise WrongCredential("Invalid credential!")
         return token
+
+    def check_answer(self, result):
+        logger.debug("Response status is: %s" % result.status_code)
+        logger.debug("%s"%result.reason )
+        if result.status_code in WRONG_STATUS:
+            raise NfvoException(result.reason)
