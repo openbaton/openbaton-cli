@@ -105,24 +105,18 @@ class SubAgent(BaseAgent):
                     return obj.get("id")
 
 
-class VNFDAgent(SubAgent):
+class VNFDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(VNFDAgent, self).__init__(client,
-                                        project_id,
-                                        "ns-descriptors",
-                                        NSDAgent(client, project_id),
-                                        "vnfdescriptors",
-                                        "vnfd")
+                                        "vnf-descriptors",
+                                        project_id)
 
 
-class VNFRAgent(SubAgent):
+class VNFRAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(VNFRAgent, self).__init__(client,
-                                        project_id,
-                                        "ns-records",
-                                        NSRAgent(client, project_id),
-                                        "vnfrecords",
-                                        "vnfr")
+                                        "vnf-records",
+                                        project_id)
 
 
 class MainAgent(object):
