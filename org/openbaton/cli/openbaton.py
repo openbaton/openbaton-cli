@@ -27,6 +27,7 @@ LIST_PRINT_KEY = {
     "project": ["id", "name", "description"],
     "vnfpackage": ["id", "name"],
     "user": ["id", "username", "email"],
+    "market": ["id", "name", "vendor", "version"],
 }
 
 SHOW_EXCLUDE_KEY = {
@@ -37,6 +38,7 @@ SHOW_EXCLUDE_KEY = {
     "vim": ["password"],
     "project": [],
     "vnfpackage": [],
+    "market": [],
     "user": ["password"]
 }
 

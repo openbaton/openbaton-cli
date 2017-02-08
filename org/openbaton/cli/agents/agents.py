@@ -58,6 +58,19 @@ class NSRAgent(BaseAgent):
         super(NSRAgent, self).__init__(client, "ns-records", project_id=project_id)
 
 
+class MarketAgent(BaseAgent):
+    def create(self, entity, _id="{}"):
+        # entity will be the link
+        entity = entity.strip()
+        entity = {
+            "link": entity
+        }
+        return json.loads(self._client.post(self.url, json.dumps(entity)))
+
+    def __init__(self, client, project_id):
+        super(MarketAgent, self).__init__(client, "ns-descriptors/marketdownload", project_id=project_id)
+
+
 class NSDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(NSDAgent, self).__init__(client, "ns-descriptors", project_id=project_id)
@@ -147,6 +160,7 @@ class MainAgent(object):
         self._vnf_package_agent = None
         self._vnf_descriptor_agent = None
         self._vnf_record_agent = None
+        self._market_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -177,6 +191,12 @@ class MainAgent(object):
         self._vnf_descriptor_agent.project_id = project_id
         return self._vnf_descriptor_agent
 
+    def get_market_agent(self, project_id):
+        if self._market_agent is None:
+            self._market_agent = MarketAgent(self._client, project_id=project_id)
+        self._market_agent.project_id = project_id
+        return self._market_agent
+
     def get_vnfr_descriptor_agent(self, project_id):
         if self._vnf_record_agent is None:
             self._vnf_record_agent = VNFRAgent(self._client, project_id=project_id)
@@ -204,3 +224,5 @@ class MainAgent(object):
             return self.get_vnf_package_agent(project_id)
         if agent == "project":
             return self.get_project_agent()
+        if agent == "market":
+            return self.get_market_agent(project_id)
