@@ -188,6 +188,8 @@ def start():
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         print()
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
     project_id = None
     username = None

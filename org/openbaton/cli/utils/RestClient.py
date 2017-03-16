@@ -6,7 +6,7 @@ import requests
 from org.openbaton.cli.errors.errors import WrongCredential, NfvoException
 
 logger = logging.getLogger("org.openbaton.cli.RestClient")
-WRONG_STATUS = [500, 404]
+WRONG_STATUS = [500, 404, 422]
 
 
 def _expired_token(content):
@@ -146,6 +146,11 @@ class RestClient(object):
 
     def check_answer(self, result):
         logger.debug("Response status is: %s" % result.status_code)
-        logger.debug("%s"%result.reason )
+        logger.debug("Reason: %s" % result.reason)
+
         if result.status_code in WRONG_STATUS:
+            try:
+                logger.error("Message is: \n\n%s" % json.dumps(json.loads(result.content), indent=2))
+            except:
+                logger.warning("Not able to parse json")
             raise NfvoException(result.reason)
