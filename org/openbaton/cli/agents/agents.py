@@ -64,6 +64,15 @@ class UserAgent(BaseAgent):
 
 
 class MarketAgent(BaseAgent):
+    def update(self, _id, entity):
+        raise WrongParameters('Market agent is allowed only to execute "create" passing a link')
+
+    def delete(self, _id):
+        raise WrongParameters('Market agent is allowed only to execute "create" passing a link')
+
+    def find(self, _id=""):
+        raise WrongParameters('Market agent is allowed only to execute "create" passing a link')
+
     def create(self, entity, _id="{}"):
         # entity will be the link
         entity = entity.strip()
