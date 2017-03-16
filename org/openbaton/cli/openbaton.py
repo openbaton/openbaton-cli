@@ -10,7 +10,6 @@ import logging.config
 import os
 import tabulate
 import argparse
-import argcomplete
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException
@@ -161,7 +160,6 @@ def openbaton(agent_choice, action, params, project_id, username, password, nfvo
                                   password=password,
                                   project_id=project_id)
 
-    # print(agent_choice, action, params)
     exec_action(agent, agent_choice, action, project_id, params)
 
 
@@ -182,7 +180,6 @@ def start():
                         choices=ACTIONS)
     parser.add_argument("params", help="The id, file or json", nargs='*')
 
-    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.debug:
