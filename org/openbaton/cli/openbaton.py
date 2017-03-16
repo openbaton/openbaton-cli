@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import sys
 import texttable
 import getpass
 import json
@@ -170,8 +171,8 @@ def start():
     parser.add_argument("-u", "--username", help="the openbaton username")
     parser.add_argument("-p", "--password", help="the openbaton password")
     parser.add_argument("-d", "--debug", help="show debug prints", action="store_true")
-    parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip", default="localhost")
-    parser.add_argument("--nfvo-port", help="the openbaton nfvo port", default="8080")
+    parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip")
+    parser.add_argument("--nfvo-port", help="the openbaton nfvo port")
 
     parser.add_argument("agent",
                         help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
@@ -187,6 +188,12 @@ def start():
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         print()
+
+    project_id = None
+    username = None
+    password = None
+    nfvo_ip = None
+    nfvo_port = None
 
     project_id = os.environ.get('OB_PROJECT_ID')
     username = os.environ.get('OB_USERNAME')
@@ -205,28 +212,55 @@ def start():
     if args.project_id is not None:
         project_id = args.project_id
 
+    print('project id %s' % project_id)
     if project_id is None:
-        project_id = input("insert project-id: ")
+        if sys.version_info[0] < 3:
+            project_id = raw_input("insert project-id: ")
+        else:
+            project_id = input("insert project-id: ")
     if username is None or username == "":
-        username = input("insert user: ")
-    if nfvo_ip is None or nfvo_ip == "":
-        nfvo_ip = input("insert nfvo_ip: ")
-    if nfvo_port is None or nfvo_port == "":
-        nfvo_port = input("insert nfvo_port: ")
+        if sys.version_info[0] < 3:
+            username = raw_input("insert user: ")
+        else:
+            username = input("insert user: ")
     if password is None or password == "":
         password = getpass.getpass("insert password: ")
+    if nfvo_ip is None or nfvo_ip == "":
+        if sys.version_info[0] < 3:
+            nfvo_ip = raw_input("insert nfvo_ip: ")
+        else:
+            nfvo_ip = input("insert nfvo_ip: ")
+    if nfvo_port is None or nfvo_port == "":
+        if sys.version_info[0] < 3:
+            nfvo_port = raw_input("insert nfvo_port: ")
+        else:
+            nfvo_port = input("insert nfvo_port: ")
 
     logger.debug("username '%s'" % username)
-    # print("password '%s'" % password)
     logger.debug("project_id '%s'" % project_id)
     logger.debug("nfvo_ip '%s'" % nfvo_ip)
     logger.debug("nfvo_port '%s'" % nfvo_port)
+
+    if nfvo_port is None or nfvo_port == "":
+        print("")
+        print("Error: nfvo_port is empty")
+        print("")
+        exit(2)
+
+    if nfvo_ip is None or nfvo_ip == "":
+        print("")
+        print("Error: nfvo_ip is empty")
+        print("")
+        exit(2)
 
     if username is None or password is None or username == "" or password == "":
         print("")
         print("Error: username and/or password are empty")
         print("")
         exit(2)
+
+    if project_id is None or project_id == "":
+        logger.warning("The project id is missing. Run openbaton project list for chosing a project id")
 
     openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password,
               nfvo_ip=nfvo_ip, nfvo_port=nfvo_port)
