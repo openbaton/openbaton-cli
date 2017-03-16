@@ -1,4 +1,5 @@
 import os
+
 from setuptools import setup, find_packages
 
 
@@ -8,7 +9,7 @@ def read(fname):
 
 setup(
     name="openbaton-cli",
-    version="2.2.1-beta7",
+    version="2.2.1-beta8",
     author="Open Baton",
     author_email="dev@openbaton.org",
     description="The Open Baton CLI",

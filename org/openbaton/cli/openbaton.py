@@ -9,8 +9,9 @@ import logging.config
 import os
 import tabulate
 import argparse
+import argcomplete
 
-from org.openbaton.cli.agents.agents import MainAgent
+from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException
 from requests import ConnectionError
 
@@ -67,7 +68,7 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             agent.get_agent(agent_choice, project_id=project_id).delete(params[0])
             print("Executed delete.")
         if action == "show":
-            if len(args) > 0:
+            if len(args) != 0 and len(args[0]) != 0:
                 params = args[0]
             else:
                 print("Show takes one argument, the id")
@@ -127,7 +128,6 @@ def get_result_to_show(obj, agent_choice):
                     if isinstance(v[0], dict):
                         tmp.append("ids:\n")
                         tmp.extend(["- " + x.get("id") for x in v])
-                    # print("appending %s" % tmp)
                     result.append([k, "\n".join(tmp)])
             else:
                 if isinstance(v, dict):
@@ -152,13 +152,13 @@ def get_result_as_list_find_all(start_list, agent):
 
 
 def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port, https=False):
-    agent = MainAgent(nfvo_ip=nfvo_ip,
-                      nfvo_port=nfvo_port,
-                      https=https,
-                      version=1,
-                      username=username,
-                      password=password,
-                      project_id=project_id)
+    agent = OpenBatonAgentFactory(nfvo_ip=nfvo_ip,
+                                  nfvo_port=nfvo_port,
+                                  https=https,
+                                  version=1,
+                                  username=username,
+                                  password=password,
+                                  project_id=project_id)
 
     # print(agent_choice, action, params)
     exec_action(agent, agent_choice, action, project_id, params)
@@ -173,10 +173,15 @@ def start():
     parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip", default="localhost")
     parser.add_argument("--nfvo-port", help="the openbaton nfvo port", default="8080")
 
-    parser.add_argument("agent", help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()))
-    parser.add_argument("action", help="the action you want to call. Possibilities are: \n" + str(ACTIONS))
+    parser.add_argument("agent",
+                        help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
+                        choices=SHOW_EXCLUDE_KEY.keys())
+    parser.add_argument("action",
+                        help="the action you want to call. Possibilities are: \n" + str(ACTIONS),
+                        choices=ACTIONS)
     parser.add_argument("params", help="The id, file or json", nargs='*')
 
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.debug:
@@ -201,13 +206,13 @@ def start():
         project_id = args.project_id
 
     if project_id is None:
-        project_id = raw_input("insert project-id: ")
+        project_id = input("insert project-id: ")
     if username is None or username == "":
-        username = raw_input("insert user: ")
+        username = input("insert user: ")
     if nfvo_ip is None or nfvo_ip == "":
-        nfvo_ip = raw_input("insert nfvo_ip: ")
+        nfvo_ip = input("insert nfvo_ip: ")
     if nfvo_port is None or nfvo_port == "":
-        nfvo_port = raw_input("insert nfvo_port: ")
+        nfvo_port = input("insert nfvo_port: ")
     if password is None or password == "":
         password = getpass.getpass("insert password: ")
 

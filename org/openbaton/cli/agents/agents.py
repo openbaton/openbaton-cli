@@ -58,6 +58,11 @@ class NSRAgent(BaseAgent):
         super(NSRAgent, self).__init__(client, "ns-records", project_id=project_id)
 
 
+class UserAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(UserAgent, self).__init__(client, "users", project_id=project_id)
+
+
 class MarketAgent(BaseAgent):
     def create(self, entity, _id="{}"):
         # entity will be the link
@@ -86,24 +91,23 @@ class VNFPackageAgent(BaseAgent):
 
 
 class SubAgent(BaseAgent):
-    def __init__(self, client, project_id, main_agent_url, main_agent, sub_url, sub_obj):
-        super(SubAgent, self).__init__(client, main_agent_url, project_id=project_id)
+    def __init__(self, client, project_id, main_agent, sub_url, sub_obj):
+        super(SubAgent, self).__init__(client, sub_url, project_id=project_id)
         self.sub_obj = sub_obj
         self._main_agent = main_agent
-        self.sub_url = sub_url
 
     def update(self, _id, entity):
-        nsd_id = self._get_sub_obj_id_from_id(_id)
+        nsd_id = self.__get_sub_obj_id_from_id__(_id)
         return super(SubAgent, self).update(nsd_id + "/" + self.sub_url + "/" + _id, entity)
 
     def find(self, _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id, only action show is allowed on this agent")
-        nsd_id = self._get_sub_obj_id_from_id(_id)
-        return super(SubAgent, self).find(nsd_id + "/" + self.sub_url + "/" + _id)
+        nsd_id = self.__get_sub_obj_id_from_id__(_id)
+        return self._main_agent.find(nsd_id + "/" + self.url + "/" + _id)
 
     def delete(self, _id):
-        nsd_id = self._get_sub_obj_id_from_id(_id)
+        nsd_id = self.__get_sub_obj_id_from_id__(_id)
         super(SubAgent, self).delete(nsd_id + "/" + self.sub_url + "/" + _id)
 
     def create(self, entity, _id=""):
@@ -111,33 +115,35 @@ class SubAgent(BaseAgent):
             raise WrongParameters("Please provide the id  of the object where to create this entity")
         return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
 
-    def _get_sub_obj_id_from_id(self, _id):
+    def __get_sub_obj_id_from_id__(self, _id):
         for obj in json.loads(self._main_agent.find()):
             for sub_obj in obj.get(self.sub_obj):
                 if sub_obj.get("id") == _id:
                     return obj.get("id")
 
 
-class VNFDAgent(BaseAgent):
-    def __init__(self, client, project_id):
-        super(VNFDAgent, self).__init__(client,
-                                        "vnf-descriptors",
-                                        project_id)
+class VNFDAgent(SubAgent):
+    def __init__(self, client, project_id, main_agent):
+        super(VNFDAgent, self).__init__(client=client,
+                                        project_id=project_id,
+                                        main_agent=main_agent,
+                                        sub_url='vnfdescriptors',
+                                        sub_obj="vnfd")
 
 
-class VNFRAgent(BaseAgent):
-    def __init__(self, client, project_id):
-        super(VNFRAgent, self).__init__(client,
-                                        "vnf-records",
-                                        project_id)
+class VNFRAgent(SubAgent):
+    def __init__(self, client, project_id, main_agent):
+        super(VNFRAgent, self).__init__(client=client,
+                                        project_id=project_id,
+                                        main_agent=main_agent,
+                                        sub_url='vnfrecords',
+                                        sub_obj="vnfr")
 
 
-class MainAgent(object):
+class OpenBatonAgentFactory(object):
     def __init__(self, nfvo_ip="localhost", nfvo_port="8080", https=False, version=1, username=None, password=None,
                  project_id=None):
-        # print
-        # print username
-        # print
+
         self.nfvo_ip = nfvo_ip
         self.nfvo_port = nfvo_port
         self.https = https
@@ -161,6 +167,7 @@ class MainAgent(object):
         self._vnf_descriptor_agent = None
         self._vnf_record_agent = None
         self._market_agent = None
+        self._user_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -185,9 +192,12 @@ class MainAgent(object):
         self._ns_descriptor_agent.project_id = project_id
         return self._ns_descriptor_agent
 
-    def get_vnfd_descriptor_agent(self, project_id):
+    def get_vnf_descriptor_agent(self, project_id):
+        self.get_ns_descriptor_agent(project_id=project_id)
         if self._vnf_descriptor_agent is None:
-            self._vnf_descriptor_agent = VNFDAgent(self._client, project_id=project_id)
+            self._vnf_descriptor_agent = VNFDAgent(client=self._client,
+                                                   project_id=project_id,
+                                                   main_agent=self._ns_descriptor_agent)
         self._vnf_descriptor_agent.project_id = project_id
         return self._vnf_descriptor_agent
 
@@ -197,9 +207,16 @@ class MainAgent(object):
         self._market_agent.project_id = project_id
         return self._market_agent
 
-    def get_vnfr_descriptor_agent(self, project_id):
+    def get_user_agent(self, project_id):
+        if self._user_agent is None:
+            self._user_agent = UserAgent(self._client, project_id=project_id)
+        self._user_agent.project_id = project_id
+        return self._user_agent
+
+    def get_vnf_record_agent(self, project_id):
+        self.get_ns_records_agent(project_id=project_id)
         if self._vnf_record_agent is None:
-            self._vnf_record_agent = VNFRAgent(self._client, project_id=project_id)
+            self._vnf_record_agent = VNFRAgent(self._client, project_id=project_id, main_agent=self._ns_records_agent)
         self._vnf_record_agent.project_id = project_id
         return self._vnf_record_agent
 
@@ -215,9 +232,9 @@ class MainAgent(object):
         if agent == "nsd":
             return self.get_ns_descriptor_agent(project_id)
         if agent == "vnfd":
-            return self.get_vnfd_descriptor_agent(project_id)
+            return self.get_vnf_descriptor_agent(project_id)
         if agent == "vnfr":
-            return self.get_vnfr_descriptor_agent(project_id)
+            return self.get_vnf_record_agent(project_id)
         if agent == "vim":
             return self.get_vim_instance_agent(project_id)
         if agent == "vnfpackage":
@@ -226,3 +243,7 @@ class MainAgent(object):
             return self.get_project_agent()
         if agent == "market":
             return self.get_market_agent(project_id)
+        if agent == "user":
+            return self.get_user_agent(project_id)
+
+        raise WrongParameters('Agent %s not found' % agent)
