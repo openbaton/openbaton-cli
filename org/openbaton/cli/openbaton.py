@@ -212,7 +212,6 @@ def start():
     if args.project_id is not None:
         project_id = args.project_id
 
-    print('project id %s' % project_id)
     if project_id is None:
         if sys.version_info[0] < 3:
             project_id = raw_input("insert project-id: ")
