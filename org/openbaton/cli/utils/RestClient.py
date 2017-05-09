@@ -1,8 +1,10 @@
 import base64
 import json
 import logging
+import sys
 
 import requests
+
 from org.openbaton.cli.errors.errors import WrongCredential, NfvoException
 
 logger = logging.getLogger("org.openbaton.cli.RestClient")
@@ -128,8 +130,18 @@ class RestClient(object):
 
     def _get_token(self):
         # logger.debug("Executing post: %s" % (self.base_url + "oauth/token"))
-        h = {"Authorization": "Basic %s" % base64.b64encode("openbatonOSClient:secret"),
-             "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"}
+        if sys.version_info > (2, 7):  # python 3.X
+            h = {
+                "Authorization": "Basic %s" % base64.b64encode(b"openbatonOSClient:secret"),
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        else:  # python 2.7
+            h = {
+                "Authorization": "Basic %s" % base64.b64encode("openbatonOSClient:secret"),
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
         # logger.debug("Headers are: %s" % h)
         response = requests.post(self.base_url + "oauth/token",
                                  headers=h,

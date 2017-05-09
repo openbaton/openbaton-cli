@@ -120,7 +120,7 @@ def get_result_to_show(obj, agent_choice):
     if isinstance(obj, str) or type(obj) == unicode:
         obj = json.loads(obj)
     result = [["key", "value"]]
-    for k, v in obj.iteritems():
+    for k, v in obj.items():
         if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
             if isinstance(v, list):
                 if len(v) > 0:
