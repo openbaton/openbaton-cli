@@ -132,7 +132,7 @@ class RestClient(object):
         # logger.debug("Executing post: %s" % (self.base_url + "oauth/token"))
         if sys.version_info > (2, 7):  # python 3.X
             h = {
-                "Authorization": "Basic %s" % base64.b64encode(b"openbatonOSClient:secret"),
+                "Authorization": "Basic %s" % base64.b64encode(b"openbatonOSClient:secret").decode("utf-8"),
                 "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded"
             }
