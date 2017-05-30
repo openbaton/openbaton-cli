@@ -96,7 +96,7 @@ class VNFPackageAgent(BaseAgent):
 
     def create(self, entity, _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".tar"):
-            return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "r")))
+            return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
 
 
 class SubAgent(BaseAgent):
