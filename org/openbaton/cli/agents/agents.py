@@ -63,10 +63,13 @@ class NSRAgent(BaseAgent):
 class KeyAgent(BaseAgent):
     def create(self, entity, _id=None):
         if os.path.exists(entity) and os.path.isfile(entity):  # import
-            entity = entity.strip()
-            if entity.endswith("}") or entity.endswith("]"):
-                result = json.loads(self._client.post(self.url, json.dumps(json.loads(entity))))
-                return result
+            with open(entity, 'r') as f:
+                entity = f.read().replace('\n', '')
+
+        entity = entity.strip()
+        if entity.endswith("}") or entity.endswith("]"):
+            result = json.loads(self._client.post(self.url, json.dumps(json.loads(entity))))
+            return result
         else:  # generate
             key = self._client.post("%s/%s" % (self.url, 'generate'), entity)
         return key
