@@ -1,0 +1,7 @@
+[nfvo]
+nfvo_ip = localhost
+nfvo_port = 8080
+nfvo_password = admin
+nfvo_username = openbaton
+nfvo_https = False
+nfvo_project_id = whatever
