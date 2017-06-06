@@ -27,6 +27,8 @@ LIST_PRINT_KEY = {
     "vim": ["id", "name", "authUrl", "tenant", "username"],
     "project": ["id", "name", "description"],
     "vnfpackage": ["id", "name"],
+    "csarnsd": ["id", "name"],
+    "csarvnfd": ["id", "name"],
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
 }
@@ -39,8 +41,24 @@ SHOW_EXCLUDE_KEY = {
     "vim": ["password"],
     "project": [],
     "vnfpackage": [],
+    "csarnsd": [],
+    "csarvnfd": [],
     "market": [],
     "user": ["password"]
+}
+
+UNSUPPORTED_ACTIONS = {
+    "nsd": [],
+    "vnfd": [],
+    "nsr": [],
+    "vnfr": [],
+    "vim": [],
+    "project": [],
+    "vnfpackage": [],
+    "csarnsd": ["list", "show", "delete"],
+    "csarvnfd": ["list", "show", "delete"],
+    "market": ["list", "show", "delete"],
+    "user": []
 }
 
 
@@ -51,6 +69,9 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             exit(1)
         if agent_choice not in LIST_PRINT_KEY.keys():
             print("agent %s unknown" % agent_choice)
+            exit(1)
+        if action in UNSUPPORTED_ACTIONS.get(agent_choice):
+            print("{} agent does not support {} action".format(agent_choice, action))
             exit(1)
         if action == "list":
             ag = agent.get_agent(agent_choice, project_id=project_id)
