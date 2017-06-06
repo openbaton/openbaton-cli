@@ -1,6 +1,8 @@
 from __future__ import print_function
+
 import json
 import os
+
 from org.openbaton.cli.errors.errors import WrongParameters
 from org.openbaton.cli.utils.RestClient import RestClient
 
@@ -56,6 +58,21 @@ class NSRAgent(BaseAgent):
 
     def __init__(self, client, project_id):
         super(NSRAgent, self).__init__(client, "ns-records", project_id=project_id)
+
+
+class KeyAgent(BaseAgent):
+    def create(self, entity, _id=None):
+        if os.path.exists(entity) and os.path.isfile(entity):  # import
+            entity = entity.strip()
+            if entity.endswith("}") or entity.endswith("]"):
+                result = json.loads(self._client.post(self.url, json.dumps(json.loads(entity))))
+                return result
+        else:  # generate
+            key = self._client.post("%s/%s" % (self.url, 'generate'), entity)
+        return key
+
+    def __init__(self, client, project_id):
+        super(KeyAgent, self).__init__(client, "keys", project_id=project_id)
 
 
 class UserAgent(BaseAgent):
@@ -177,6 +194,7 @@ class OpenBatonAgentFactory(object):
         self._vnf_record_agent = None
         self._market_agent = None
         self._user_agent = None
+        self._key_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -235,6 +253,12 @@ class OpenBatonAgentFactory(object):
         self._vnf_package_agent.project_id = project_id
         return self._vnf_package_agent
 
+    def get_key_agent(self, project_id):
+        if self._key_agent is None:
+            self._key_agent = KeyAgent(self._client, project_id=project_id)
+        self._key_agent.project_id = project_id
+        return self._key_agent
+
     def get_agent(self, agent, project_id):
         if agent == "nsr":
             return self.get_ns_records_agent(project_id)
@@ -254,5 +278,7 @@ class OpenBatonAgentFactory(object):
             return self.get_market_agent(project_id)
         if agent == "user":
             return self.get_user_agent(project_id)
+        if agent == "key":
+            return self.get_key_agent(project_id)
 
         raise WrongParameters('Agent %s not found' % agent)
