@@ -27,6 +27,7 @@ LIST_PRINT_KEY = {
     "vim": ["id", "name", "authUrl", "tenant", "username"],
     "project": ["id", "name", "description"],
     "vnfpackage": ["id", "name"],
+    "key": ["id", "name", "fingerprint"],
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
 }
@@ -40,11 +41,12 @@ SHOW_EXCLUDE_KEY = {
     "project": [],
     "vnfpackage": [],
     "market": [],
+    "key": [],
     "user": ["password"]
 }
 
 
-def exec_action(agent, agent_choice, action, project_id, *args):
+def _exec_action(agent, agent_choice, action, project_id, *args):
     try:
         if action not in ACTIONS:
             print("Action %s unknown" % action)
@@ -118,7 +120,11 @@ def exec_action(agent, agent_choice, action, project_id, *args):
 
 def get_result_to_show(obj, agent_choice):
     if isinstance(obj, str) or type(obj) == unicode:
-        obj = json.loads(obj)
+        try:
+            obj = json.loads(obj)
+        except ValueError:
+            print(obj)
+            exit(0)
     result = [["key", "value"]]
     for k, v in obj.items():
         if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
@@ -160,7 +166,7 @@ def openbaton(agent_choice, action, params, project_id, username, password, nfvo
                                   password=password,
                                   project_id=project_id)
 
-    exec_action(agent, agent_choice, action, project_id, params)
+    _exec_action(agent, agent_choice, action, project_id, params)
 
 
 def start():
