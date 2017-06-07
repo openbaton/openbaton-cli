@@ -62,9 +62,17 @@ Where the agents are:
 |            | Network Service  |
 |            | Descriptor       |
 +------------+------------------+
+| vnfd       | Agent requesting |
+|            | Network Service  |
+|            | Records          |
++------------+------------------+
 | nsr        | Agent requesting |
 |            | Network Service  |
 |            | Records          |
++------------+------------------+
+| vnfr       | Agent requesting |
+|            | Virtual Network  |
+|            | Service Records  |
 +------------+------------------+
 | projects   | Agent requesting |
 |            | Projects         |
@@ -78,6 +86,22 @@ Where the agents are:
 +------------+------------------+
 | vnfpackages| Agent requesting |
 |            | VNFPAckages      |
++------------+------------------+
+| market     | Agent adding     |
+|            | Network Service  |
+|            | Descriptors from |
+|            | the Marketplace  |
++------------+------------------+
+| csarnsd    | Agent adding     |
+|            | Network Service  |
+|            | Descriptors in   |
+|            | CSAR format      |
++------------+------------------+
+| csarvnfd   | Agent adding     |
+|            | Virtual Network  |
+|            | Function         |
+|            | Descriptors in   |
+|            | CSAR format      |
 +------------+------------------+
 
 And actions are:
@@ -96,8 +120,8 @@ And actions are:
 | create     | create the passed|
 |            | object           |
 +------------+------------------+
-| update     | update the passed|
-|            | object           |
+| delete     | delete the       |
+|            | specified object |
 +------------+------------------+
 
 Issue tracker

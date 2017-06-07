@@ -142,6 +142,47 @@ class VNFPackageAgent(BaseAgent):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
 
 
+class CSARNSDAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(CSARNSDAgent, self).__init__(client, "csar-nsd", project_id=project_id)
+
+    def create(self, entity, _id=""):
+        if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".csar"):
+            return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
+        else: # it is not a .csar file but a marketplace link
+            return json.loads(self._client.post(self.url[:-1] + "/marketdownload/%s" % _id, '{"link":"%s"}' % entity))
+
+    def update(self, _id, entity):
+        raise WrongParameters('csarnsd agent is only allowed to execute "create"')
+
+    def delete(self, _id):
+        raise WrongParameters('csarnsd agent is only allowed to execute "create"')
+
+    def find(self, _id=""):
+        raise WrongParameters('csarnsd agent is only allowed to execute "create"')
+
+
+class CSARVNFDAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(CSARVNFDAgent, self).__init__(client, "csar-vnfd", project_id=project_id)
+
+    def create(self, entity, _id=""):
+        if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".csar"):
+            return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
+        else: # it is not a .csar file but a marketplace link
+            return json.loads(self._client.post(self.url[:-1] + "/marketdownload/%s" % _id, '{"link":"%s"}' % entity))
+
+    def update(self, _id, entity):
+        raise WrongParameters('csarvnfd agent is only allowed to execute "create"')
+
+    def delete(self, _id):
+        raise WrongParameters('Market agent is only allowed to execute "create"')
+
+    def find(self, _id=""):
+        raise WrongParameters('Market agent is only allowed to execute "create"')
+
+
+
 class SubAgent(BaseAgent):
     def __init__(self, client, project_id, main_agent, sub_url, sub_obj):
         super(SubAgent, self).__init__(client, sub_url, project_id=project_id)
@@ -220,6 +261,8 @@ class OpenBatonAgentFactory(object):
         self._vnf_record_agent = None
         self._market_agent = None
         self._user_agent = None
+        self._csarnsd_agent = None
+        self._csarvnfd_agent = None
         self._key_agent = None
         self._log_agent = None
 
@@ -267,6 +310,18 @@ class OpenBatonAgentFactory(object):
         self._user_agent.project_id = project_id
         return self._user_agent
 
+    def get_csarnsd_agent(self, project_id):
+        if self._csarnsd_agent is None:
+            self._csarnsd_agent = CSARNSDAgent(self._client, project_id=project_id)
+        self._csarnsd_agent.project_id = project_id
+        return self._csarnsd_agent
+
+    def get_csarvnfd_agent(self, project_id):
+        if self._csarvnfd_agent is None:
+            self._csarvnfd_agent = CSARVNFDAgent(self._client, project_id=project_id)
+        self._csarvnfd_agent.project_id = project_id
+        return self._csarvnfd_agent
+
     def get_vnf_record_agent(self, project_id):
         self.get_ns_records_agent(project_id=project_id)
         if self._vnf_record_agent is None:
@@ -311,6 +366,10 @@ class OpenBatonAgentFactory(object):
             return self.get_market_agent(project_id)
         if agent == "user":
             return self.get_user_agent(project_id)
+        if agent == "csarnsd":
+            return self.get_csarnsd_agent(project_id)
+        if agent == "csarvnfd":
+            return self.get_csarvnfd_agent(project_id)
         if agent == "key":
             return self.get_key_agent(project_id)
         if agent == "log":
