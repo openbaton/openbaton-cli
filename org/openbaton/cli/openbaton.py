@@ -29,6 +29,8 @@ LIST_PRINT_KEY = {
     "vnfpackage": ["id", "name"],
     "csarnsd": ["id", "name"],
     "csarvnfd": ["id", "name"],
+    "key": ["id", "name", "fingerprint"],
+    "log": ["id"],
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
 }
@@ -44,6 +46,8 @@ SHOW_EXCLUDE_KEY = {
     "csarnsd": [],
     "csarvnfd": [],
     "market": [],
+    "key": [],
+    "log": [],
     "user": ["password"]
 }
 
@@ -58,11 +62,13 @@ UNSUPPORTED_ACTIONS = {
     "csarnsd": ["list", "show", "delete"],
     "csarvnfd": ["list", "show", "delete"],
     "market": ["list", "show", "delete"],
+    "key": [],
+    "log": [],
     "user": []
 }
 
 
-def exec_action(agent, agent_choice, action, project_id, *args):
+def _exec_action(agent, agent_choice, action, project_id, *args):
     try:
         if action not in ACTIONS:
             print("Action %s unknown" % action)
@@ -91,6 +97,8 @@ def exec_action(agent, agent_choice, action, project_id, *args):
         if action == "show":
             if len(args) != 0 and len(args[0]) != 0:
                 params = args[0]
+                if isinstance(params, str):
+                    params = params.split()
             else:
                 print("Show takes one argument, the id")
                 exit(1)
@@ -99,7 +107,7 @@ def exec_action(agent, agent_choice, action, project_id, *args):
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
             table.add_rows(
-                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(params[0]),
+                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(*params),
                                    agent_choice))
             print(" ")
             print(table.draw() + "\n")
@@ -139,27 +147,36 @@ def exec_action(agent, agent_choice, action, project_id, *args):
 
 def get_result_to_show(obj, agent_choice):
     if isinstance(obj, str) or type(obj) == unicode:
-        obj = json.loads(obj)
-    result = [["key", "value"]]
-    for k, v in obj.items():
-        if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
-            if isinstance(v, list):
-                if len(v) > 0:
-                    tmp = []
-                    if isinstance(v[0], dict):
-                        tmp.append("ids:\n")
-                        tmp.extend(["- " + x.get("id") for x in v])
-                    result.append([k, "\n".join(tmp)])
-            else:
-                if isinstance(v, dict):
-                    idName = v.get("name")
-                    if idName is None:
-                        idName = v.get("id")
-                    result.append([k, idName])
+        try:
+            obj = json.loads(obj)
+        except ValueError:
+            print(obj)
+            exit(0)
+    if isinstance(obj,list):
+        for item in obj:
+            print(item)
+        exit(0)
+    elif isinstance(obj, dict):
+        result = [["key", "value"]]
+        for k, v in obj.items():
+            if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
+                if isinstance(v, list):
+                    if len(v) > 0:
+                        tmp = []
+                        if isinstance(v[0], dict):
+                            tmp.append("ids:\n")
+                            tmp.extend(["- " + x.get("id") for x in v])
+                        result.append([k, "\n".join(tmp)])
                 else:
-                    result.append([k, v])
+                    if isinstance(v, dict):
+                        idName = v.get("name")
+                        if idName is None:
+                            idName = v.get("id")
+                        result.append([k, idName])
+                    else:
+                        result.append([k, v])
 
-    return result
+        return result
 
 
 def get_result_as_list_find_all(start_list, agent):
@@ -181,7 +198,7 @@ def openbaton(agent_choice, action, params, project_id, username, password, nfvo
                                   password=password,
                                   project_id=project_id)
 
-    exec_action(agent, agent_choice, action, project_id, params)
+    _exec_action(agent, agent_choice, action, project_id, params)
 
 
 def start():

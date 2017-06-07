@@ -259,3 +259,4 @@ $RECYCLE.BIN/
 # PyPip
 
 .pypirc
+/tests/nfvo.properties.ini
