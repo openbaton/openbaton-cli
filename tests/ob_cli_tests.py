@@ -17,9 +17,9 @@ class MyTestCase(unittest.TestCase):
         super(MyTestCase, self).__init__(methodName)
 
     def test_generate_key(self):
-        agent_choice = 'key'
-        action = 'list'
-        params = None
+        agent_choice = 'log'
+        action = 'show'
+        params = 'ed04ddcb-a824-4e70-9e35-0b9aa3a08f50 iperf-server iperf-server-6319228'
         openbaton(agent_choice=agent_choice,
                   action=action,
                   params=params,

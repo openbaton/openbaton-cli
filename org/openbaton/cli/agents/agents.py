@@ -105,6 +105,29 @@ class MarketAgent(BaseAgent):
         super(MarketAgent, self).__init__(client, "ns-descriptors/marketdownload", project_id=project_id)
 
 
+class LogAgent(BaseAgent):
+    def update(self, _id, entity):
+        raise WrongParameters('Market agent is allowed only to execute "show" passing: nsr_id, vnfr_name, hostname')
+
+    def delete(self, _id):
+        raise WrongParameters('Market agent is allowed only to execute "show" passing: nsr_id, vnfr_name, hostname')
+
+    def find(self, nsr_id=None, vnfr_name=None, hostname=None, lines=None):
+        if not vnfr_name or not hostname or not nsr_id:
+            raise WrongParameters('LogAgent "show" method requires nsr_id, vnfr_name and hostname')
+        if lines:
+            body = json.dumps({'lines': int(lines)})
+        else:
+            body = None
+        return self._client.post(self.url + "/%s/vnfrecord/%s/hostname/%s" % (nsr_id, vnfr_name, hostname), body)
+
+    def create(self, entity, _id="{}"):
+        raise WrongParameters('Market agent is allowed only to execute "show" passing: nsr_id, vnfr_name, hostname')
+
+    def __init__(self, client, project_id):
+        super(LogAgent, self).__init__(client, "logs", project_id=project_id)
+
+
 class NSDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(NSDAgent, self).__init__(client, "ns-descriptors", project_id=project_id)
@@ -198,6 +221,7 @@ class OpenBatonAgentFactory(object):
         self._market_agent = None
         self._user_agent = None
         self._key_agent = None
+        self._log_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -262,6 +286,12 @@ class OpenBatonAgentFactory(object):
         self._key_agent.project_id = project_id
         return self._key_agent
 
+    def get_log_agent(self, project_id):
+        if self._log_agent is None:
+            self._log_agent = LogAgent(self._client, project_id=project_id)
+        self._log_agent.project_id = project_id
+        return self._log_agent
+
     def get_agent(self, agent, project_id):
         if agent == "nsr":
             return self.get_ns_records_agent(project_id)
@@ -283,5 +313,7 @@ class OpenBatonAgentFactory(object):
             return self.get_user_agent(project_id)
         if agent == "key":
             return self.get_key_agent(project_id)
+        if agent == "log":
+            return self.get_log_agent(project_id)
 
         raise WrongParameters('Agent %s not found' % agent)

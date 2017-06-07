@@ -28,6 +28,7 @@ LIST_PRINT_KEY = {
     "project": ["id", "name", "description"],
     "vnfpackage": ["id", "name"],
     "key": ["id", "name", "fingerprint"],
+    "log": ["id"],
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
 }
@@ -42,6 +43,7 @@ SHOW_EXCLUDE_KEY = {
     "vnfpackage": [],
     "market": [],
     "key": [],
+    "log": [],
     "user": ["password"]
 }
 
@@ -72,6 +74,8 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
         if action == "show":
             if len(args) != 0 and len(args[0]) != 0:
                 params = args[0]
+                if isinstance(params, str):
+                    params = params.split()
             else:
                 print("Show takes one argument, the id")
                 exit(1)
@@ -80,7 +84,7 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
             table.add_rows(
-                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(params[0]),
+                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(*params),
                                    agent_choice))
             print(" ")
             print(table.draw() + "\n")
@@ -125,26 +129,31 @@ def get_result_to_show(obj, agent_choice):
         except ValueError:
             print(obj)
             exit(0)
-    result = [["key", "value"]]
-    for k, v in obj.items():
-        if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
-            if isinstance(v, list):
-                if len(v) > 0:
-                    tmp = []
-                    if isinstance(v[0], dict):
-                        tmp.append("ids:\n")
-                        tmp.extend(["- " + x.get("id") for x in v])
-                    result.append([k, "\n".join(tmp)])
-            else:
-                if isinstance(v, dict):
-                    idName = v.get("name")
-                    if idName is None:
-                        idName = v.get("id")
-                    result.append([k, idName])
+    if isinstance(obj,list):
+        for item in obj:
+            print(item)
+        exit(0)
+    elif isinstance(obj, dict):
+        result = [["key", "value"]]
+        for k, v in obj.items():
+            if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
+                if isinstance(v, list):
+                    if len(v) > 0:
+                        tmp = []
+                        if isinstance(v[0], dict):
+                            tmp.append("ids:\n")
+                            tmp.extend(["- " + x.get("id") for x in v])
+                        result.append([k, "\n".join(tmp)])
                 else:
-                    result.append([k, v])
+                    if isinstance(v, dict):
+                        idName = v.get("name")
+                        if idName is None:
+                            idName = v.get("id")
+                        result.append([k, idName])
+                    else:
+                        result.append([k, v])
 
-    return result
+        return result
 
 
 def get_result_as_list_find_all(start_list, agent):
