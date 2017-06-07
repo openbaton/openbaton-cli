@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="openbaton-cli",
-    version="3.2.5",
+    version="3.2.6",
     author="Open Baton",
     author_email="dev@openbaton.org",
     description="The Open Baton CLI",
