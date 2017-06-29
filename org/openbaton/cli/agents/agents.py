@@ -50,6 +50,9 @@ class VimInstanceAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(VimInstanceAgent, self).__init__(client, "datacenters", project_id=project_id)
 
+    def refresh(self, _id):
+        self._client.get(self.url + "/%s/refresh" % _id)
+
 
 class NSRAgent(BaseAgent):
     def create(self, entity, _id="{}"):
