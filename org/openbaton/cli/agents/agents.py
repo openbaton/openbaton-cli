@@ -46,6 +46,11 @@ class ProjectAgent(BaseAgent):
         super(ProjectAgent, self).__init__(client, "projects")
 
 
+class EventAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(EventAgent, self).__init__(client, "events", project_id=project_id)
+
+
 class VimInstanceAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(VimInstanceAgent, self).__init__(client, "datacenters", project_id=project_id)
@@ -256,6 +261,7 @@ class OpenBatonAgentFactory(object):
                                   project_id=project_id)
 
         self._project_agent = None
+        self._event_agent = None
         self._vim_instance_agent = None
         self._ns_records_agent = None
         self._ns_descriptor_agent = None
@@ -273,6 +279,12 @@ class OpenBatonAgentFactory(object):
         if self._project_agent is None:
             self._project_agent = ProjectAgent(self._client)
         return self._project_agent
+
+    def get_event_agent(self, project_id):
+        if self._event_agent is None:
+            self._event_agent = EventAgent(self._client, project_id=project_id)
+        self._event_agent.project_id = project_id
+        return self._event_agent
 
     def get_vim_instance_agent(self, project_id):
         if self._vim_instance_agent is None:
@@ -365,6 +377,8 @@ class OpenBatonAgentFactory(object):
             return self.get_vnf_package_agent(project_id)
         if agent == "project":
             return self.get_project_agent()
+        if agent == "event":
+            return self.get_event_agent(project_id)
         if agent == "market":
             return self.get_market_agent(project_id)
         if agent == "user":
