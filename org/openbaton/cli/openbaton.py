@@ -126,7 +126,7 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
             table.add_rows(
-                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(params[0]),
+                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(*params),
                                    agent_choice))
             print("\n")
             print(table.draw() + "\n\n")

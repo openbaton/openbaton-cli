@@ -28,7 +28,7 @@ class BaseAgent(object):
             with open(entity) as f:
                 return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(f.read().replace('\n', ''))))
 
-    def create(self, entity, _id=""):
+    def create(self, entity='{}', _id=""):
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
             result = json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(json.loads(entity))))
@@ -60,7 +60,7 @@ class VimInstanceAgent(BaseAgent):
 
 
 class NSRAgent(BaseAgent):
-    def create(self, entity, _id="{}"):
+    def create(self, entity='', _id="{}"):
         entity = entity.strip()
         return json.loads(self._client.post(self.url + "/%s" % entity, json.dumps(json.loads(_id))))
 
@@ -69,7 +69,7 @@ class NSRAgent(BaseAgent):
 
 
 class KeyAgent(BaseAgent):
-    def create(self, entity, _id=None):
+    def create(self, entity='', _id=None):
         if os.path.exists(entity) and os.path.isfile(entity):  # import
             with open(entity, 'r') as f:
                 entity = f.read().replace('\n', '')
@@ -145,7 +145,7 @@ class VNFPackageAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(VNFPackageAgent, self).__init__(client, "vnf-packages", project_id=project_id)
 
-    def create(self, entity, _id=""):
+    def create(self, entity='', _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".tar"):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
 
@@ -154,10 +154,10 @@ class CSARNSDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(CSARNSDAgent, self).__init__(client, "csar-nsd", project_id=project_id)
 
-    def create(self, entity, _id=""):
+    def create(self, entity='', _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".csar"):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
-        else: # it is not a .csar file but a marketplace link
+        else:  # it is not a .csar file but a marketplace link
             return json.loads(self._client.post(self.url[:-1] + "/marketdownload/%s" % _id, '{"link":"%s"}' % entity))
 
     def update(self, _id, entity):
@@ -174,10 +174,10 @@ class CSARVNFDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(CSARVNFDAgent, self).__init__(client, "csar-vnfd", project_id=project_id)
 
-    def create(self, entity, _id=""):
+    def create(self, entity='', _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".csar"):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
-        else: # it is not a .csar file but a marketplace link
+        else:  # it is not a .csar file but a marketplace link
             return json.loads(self._client.post(self.url[:-1] + "/marketdownload/%s" % _id, '{"link":"%s"}' % entity))
 
     def update(self, _id, entity):
@@ -188,7 +188,6 @@ class CSARVNFDAgent(BaseAgent):
 
     def find(self, _id=""):
         raise WrongParameters('Market agent is only allowed to execute "create"')
-
 
 
 class SubAgent(BaseAgent):
@@ -211,7 +210,7 @@ class SubAgent(BaseAgent):
         nsd_id = self.__get_sub_obj_id_from_id__(_id)
         super(SubAgent, self).delete(nsd_id + "/" + self.sub_url + "/" + _id)
 
-    def create(self, entity, _id=""):
+    def create(self, entity='', _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id  of the object where to create this entity")
         return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
