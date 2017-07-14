@@ -161,13 +161,18 @@ class RestClient(object):
         logger.debug("Reason: %s" % result.reason)
 
         if result.status_code in WRONG_STATUS:
+            message = None
             try:
-                message = result.content
+                content = result.content
                 try:
-                    message = message.decode('utf-8')
+                    content = content.decode('utf-8')
                 except:
                     pass
-                logger.error("Message is: \n\n%s" % json.dumps(json.loads(message), indent=2))
+                content = json.loads(content)
+                logger.debug("Content is: \n\n%s" % json.dumps(content, indent=2))
+                message = content.get('message') or content
+
             except:
                 logger.warning("Not able to parse json")
-            raise NfvoException(result.reason)
+                logger.debug("Content is: \n\n%s" % content)
+            raise NfvoException(message or content or result.reason)
