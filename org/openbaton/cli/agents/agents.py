@@ -115,14 +115,14 @@ class MarketAgent(BaseAgent):
 
 class LogAgent(BaseAgent):
     def update(self, _id, entity):
-        raise WrongParameters('Market agent is allowed only to execute "show" passing: nsr_id, vnfr_name, hostname')
+        raise WrongParameters('The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name, hostname')
 
     def delete(self, _id):
-        raise WrongParameters('Market agent is allowed only to execute "show" passing: nsr_id, vnfr_name, hostname')
+        raise WrongParameters('The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name, hostname')
 
     def find(self, nsr_id=None, vnfr_name=None, hostname=None, lines=None):
         if not vnfr_name or not hostname or not nsr_id:
-            raise WrongParameters('LogAgent "show" method requires nsr_id, vnfr_name and hostname')
+            raise WrongParameters('The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name and hostname')
         if lines:
             body = json.dumps({'lines': int(lines)})
         else:
@@ -130,7 +130,7 @@ class LogAgent(BaseAgent):
         return self._client.post(self.url + "/%s/vnfrecord/%s/hostname/%s" % (nsr_id, vnfr_name, hostname), body)
 
     def create(self, entity, _id="{}"):
-        raise WrongParameters('Market agent is allowed only to execute "show" passing: nsr_id, vnfr_name, hostname')
+        raise WrongParameters('The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name, hostname')
 
     def __init__(self, client, project_id):
         super(LogAgent, self).__init__(client, "logs", project_id=project_id)

@@ -66,7 +66,7 @@ UNSUPPORTED_ACTIONS = {
     "csarvnfd": ["list", "show", "delete"],
     "market": ["list", "show", "delete"],
     "key": [],
-    "log": [],
+    "log": ["list", "delete", "create"],
     "user": []
 }
 
