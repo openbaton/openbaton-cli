@@ -191,6 +191,11 @@ class CSARVNFDAgent(BaseAgent):
         raise WrongParameters('Market agent is only allowed to execute "create"')
 
 
+class VNFDAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(VNFDAgent, self).__init__(client=client, url="vnf-descriptors", project_id=project_id)
+
+
 class SubAgent(BaseAgent):
     def __init__(self, client, project_id, main_agent, sub_url, sub_obj):
         super(SubAgent, self).__init__(client, main_agent.url, project_id=project_id)
@@ -230,17 +235,8 @@ class SubAgent(BaseAgent):
             for sub_obj in obj.get(self.sub_obj):
                 if sub_obj.get("id") == _id:
                     return obj.get("id")
-        # if no parent object was found, we can assume that the child object does not exist
+        # if no parent object was found, we can safely assume that the child object does not exist
         raise NotFoundException('No {} found with ID {}'.format(self.sub_obj, _id))
-
-
-class VNFDAgent(SubAgent):
-    def __init__(self, client, project_id, main_agent):
-        super(VNFDAgent, self).__init__(client=client,
-                                        project_id=project_id,
-                                        main_agent=main_agent,
-                                        sub_url='vnfdescriptors',
-                                        sub_obj="vnfd")
 
 
 class VNFRAgent(SubAgent):
@@ -316,11 +312,8 @@ class OpenBatonAgentFactory(object):
         return self._ns_descriptor_agent
 
     def get_vnf_descriptor_agent(self, project_id):
-        self.get_ns_descriptor_agent(project_id=project_id)
         if self._vnf_descriptor_agent is None:
-            self._vnf_descriptor_agent = VNFDAgent(client=self._client,
-                                                   project_id=project_id,
-                                                   main_agent=self._ns_descriptor_agent)
+            self._vnf_descriptor_agent = VNFDAgent(client=self._client, project_id=project_id)
         self._vnf_descriptor_agent.project_id = project_id
         return self._vnf_descriptor_agent
 
