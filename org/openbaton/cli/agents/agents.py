@@ -3,7 +3,7 @@ from __future__ import print_function
 import json
 import os
 
-from org.openbaton.cli.errors.errors import WrongParameters
+from org.openbaton.cli.errors.errors import WrongParameters, NotFoundException
 from org.openbaton.cli.utils.RestClient import RestClient
 
 
@@ -122,7 +122,8 @@ class LogAgent(BaseAgent):
 
     def find(self, nsr_id=None, vnfr_name=None, hostname=None, lines=None):
         if not vnfr_name or not hostname or not nsr_id:
-            raise WrongParameters('The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name and hostname')
+            raise WrongParameters(
+                'The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name and hostname')
         if lines:
             body = json.dumps({'lines': int(lines)})
         else:
@@ -192,34 +193,45 @@ class CSARVNFDAgent(BaseAgent):
 
 class SubAgent(BaseAgent):
     def __init__(self, client, project_id, main_agent, sub_url, sub_obj):
-        super(SubAgent, self).__init__(client, sub_url, project_id=project_id)
+        super(SubAgent, self).__init__(client, main_agent.url, project_id=project_id)
         self.sub_obj = sub_obj
+        self.sub_url = sub_url
         self._main_agent = main_agent
 
     def update(self, _id, entity):
-        nsd_id = self.__get_sub_obj_id_from_id__(_id)
-        return super(SubAgent, self).update(nsd_id + "/" + self.sub_url + "/" + _id, entity)
+        parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
+        return super(SubAgent, self).update(parent_obj_id + "/" + self.sub_url + "/" + _id, entity)
 
     def find(self, _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id, only action show is allowed on this agent")
-        nsd_id = self.__get_sub_obj_id_from_id__(_id)
-        return self._main_agent.find(nsd_id + "/" + self.url + "/" + _id)
+        parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
+        return self._main_agent.find(parent_obj_id + "/" + self.url + "/" + _id)
 
     def delete(self, _id):
-        nsd_id = self.__get_sub_obj_id_from_id__(_id)
-        super(SubAgent, self).delete(nsd_id + "/" + self.sub_url + "/" + _id)
+        parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
+        super(SubAgent, self).delete(parent_obj_id + "/" + self.sub_url + "/" + _id)
 
     def create(self, entity='', _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id  of the object where to create this entity")
         return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
 
-    def __get_sub_obj_id_from_id__(self, _id):
+    def __get_parent_obj_id_from_id__(self, _id):
+        """
+        Get the ID of the parent entity of the entity related to _id.
+        For example if _id is the ID of a VNFR, this method will return the corresponding NSR's ID.
+        Raises a NotFoundException if no parent entity was found, assuming that the child entity
+        does not exit in the first place.
+        :param _id:
+        :return:
+        """
         for obj in json.loads(self._main_agent.find()):
             for sub_obj in obj.get(self.sub_obj):
                 if sub_obj.get("id") == _id:
                     return obj.get("id")
+        # if no parent object was found, we can assume that the child object does not exist
+        raise NotFoundException('No {} found with ID {}'.format(self.sub_obj, _id))
 
 
 class VNFDAgent(SubAgent):

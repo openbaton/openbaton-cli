@@ -8,3 +8,7 @@ class WrongParameters(Exception):
 
 class NfvoException(Exception):
     pass
+
+
+class NotFoundException(Exception):
+    pass

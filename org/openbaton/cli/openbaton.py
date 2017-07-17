@@ -12,7 +12,7 @@ import tabulate
 import argparse
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
-from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException
+from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException, NotFoundException
 from requests import ConnectionError
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
@@ -143,6 +143,10 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
         print("ERROR: %s" % e.message)
         print("")
     except NfvoException as e:
+        print("")
+        print("ERROR: %s" % e.message)
+        print("")
+    except NotFoundException as e:
         print("")
         print("ERROR: %s" % e.message)
         print("")
