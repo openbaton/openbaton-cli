@@ -3,9 +3,27 @@ from __future__ import print_function
 import json
 import os
 
-from org.openbaton.cli.errors.errors import WrongParameters, NotFoundException
+from org.openbaton.cli.errors.errors import WrongParameters, NotFoundException, SdkException
 from org.openbaton.cli.utils.RestClient import RestClient
 
+
+def _get_parents_obj_id_from_id(id_to_find, main_agent, first_level, second_level=None, third_level=None):
+    for obj in json.loads(main_agent.find()):
+        for sub_obj in obj.get(first_level):
+            if not second_level:
+                if sub_obj.get("id") == id_to_find:
+                    return obj.get('id'), sub_obj
+            else:
+                for sub_sub_obj in sub_obj.get(second_level):
+                    if not third_level:
+                        if sub_sub_obj.get("id") == id_to_find:
+                            return obj.get("id"), sub_obj.get('id'), sub_sub_obj
+                    else:
+                        for sub_sub_sub_obj in sub_sub_obj.get(third_level):
+                            if sub_sub_sub_obj.get("id") == id_to_find:
+                                return obj.get("id"), sub_obj.get('id'), sub_sub_obj.get('id'), sub_sub_sub_obj
+    # if no parent object was found, we can safely assume that the child object does not exist
+    raise NotFoundException('No {} found with ID {}'.format(first_level, id_to_find))
 
 class BaseAgent(object):
     def __init__(self, client, url, project_id=None):
@@ -66,6 +84,44 @@ class NSRAgent(BaseAgent):
 
     def __init__(self, client, project_id):
         super(NSRAgent, self).__init__(client, "ns-records", project_id=project_id)
+
+        # {id}/vnfrecords/{idVnf}/vdunits/vnfcinstances
+
+
+class VNFCInstanceAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(VNFCInstanceAgent, self).__init__(client, "ns-records", project_id=project_id)
+
+    # {id}/vnfrecords/{idVnf}/vdunits/vnfcinstances
+    def delete(self, nsr_id, vnfr_id, vdu_id="", vnfci_id=""):
+        return self._client.delete(
+            "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances/%s" % (self.url, nsr_id, vnfr_id, vdu_id, vnfci_id))
+
+    def create(self, entity, nsr_id, vnfr_id, vdu_id="", standby=False, ):
+        try:
+            entity_dict = json.loads(entity)
+        except:
+            raise WrongParameters(
+                "Not able to parse VNFComponent. usage: openbaton vnfci create <vnfcomponent> <nsr_id> <vnfr_id> ["
+                "stanby] [<vdu_id>] ")
+        if 'vnfComponent' not in entity_dict.keys() or not isinstance(entity_dict.get("vnfComponent"), dict):
+            raise SdkException("Body must contain VNFComponent and must be a json object")
+        if standby:
+            return self._client.post(
+                "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances/standby" % (self.url, nsr_id, vnfr_id, vdu_id), entity)
+        else:
+            return self._client.post(
+                "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances" % (self.url, nsr_id, vnfr_id, vdu_id), entity)
+
+    def update(self, _id, entity):
+        raise WrongParameters('VNFC Instance agent is allowed only to execute "create" and "delete"')
+
+    def find(self, _id=""):
+        if not _id:
+            raise WrongParameters("Please provide the id")
+        nsr_id, vnfr_id, vdu_id, vnfci = _get_parents_obj_id_from_id(_id, NSRAgent(self._client,self._client.project_id),'vnfr','vdu', 'vnfc_instance')
+        return vnfci
+
 
 
 class KeyAgent(BaseAgent):
@@ -208,10 +264,10 @@ class SubAgent(BaseAgent):
         return super(SubAgent, self).update(parent_obj_id + "/" + self.sub_url + "/" + _id, entity)
 
     def find(self, _id=""):
-        if _id is None or _id == "":
+        if not _id:
             raise WrongParameters("Please provide the id, only action show is allowed on this agent")
-        parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
-        return self._main_agent.find(parent_obj_id + "/" + self.url + "/" + _id)
+        parent_obj_id, obj = _get_parents_obj_id_from_id(_id,self._main_agent,self.sub_obj)
+        return json.dumps(obj)
 
     def delete(self, _id):
         parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
@@ -222,22 +278,6 @@ class SubAgent(BaseAgent):
             raise WrongParameters("Please provide the id  of the object where to create this entity")
         return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
 
-    def __get_parent_obj_id_from_id__(self, _id):
-        """
-        Get the ID of the parent entity of the entity related to _id.
-        For example if _id is the ID of a VNFR, this method will return the corresponding NSR's ID.
-        Raises a NotFoundException if no parent entity was found, assuming that the child entity
-        does not exit in the first place.
-        :param _id:
-        :return:
-        """
-        for obj in json.loads(self._main_agent.find()):
-            for sub_obj in obj.get(self.sub_obj):
-                if sub_obj.get("id") == _id:
-                    return obj.get("id")
-        # if no parent object was found, we can safely assume that the child object does not exist
-        raise NotFoundException('No {} found with ID {}'.format(self.sub_obj, _id))
-
 
 class VNFRAgent(SubAgent):
     def __init__(self, client, project_id, main_agent):
@@ -246,6 +286,23 @@ class VNFRAgent(SubAgent):
                                         main_agent=main_agent,
                                         sub_url='vnfrecords',
                                         sub_obj="vnfr")
+
+
+class VDUAgent(SubAgent):
+    def __init__(self, client, project_id, main_agent):
+        super(VDUAgent, self).__init__(client=client,
+                                        project_id=project_id,
+                                        main_agent=main_agent,
+                                        sub_url='vnfrecords',
+                                        sub_obj="vnfr")
+
+    def find(self, _id=""):
+        if _id is None or _id == "":
+            raise WrongParameters("Please provide the id, only action show is allowed on this agent")
+        nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+        return vdu
+
+
 
 
 class OpenBatonAgentFactory(object):
@@ -281,6 +338,8 @@ class OpenBatonAgentFactory(object):
         self._csarvnfd_agent = None
         self._key_agent = None
         self._log_agent = None
+        self._vnfci_agent = None
+        self._vdu_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -366,6 +425,18 @@ class OpenBatonAgentFactory(object):
         self._log_agent.project_id = project_id
         return self._log_agent
 
+    def get_vnfci_agnet(self, project_id):
+        if self._vnfci_agent is None:
+            self._vnfci_agent = VNFCInstanceAgent(self._client, project_id=project_id)
+        self._vnfci_agent.project_id = project_id
+        return self._vnfci_agent
+
+    def get_vdu_agnet(self, project_id):
+        if self._vdu_agent is None:
+            self._vdu_agent = VDUAgent(self._client, project_id=project_id, main_agent=self.get_ns_records_agent(project_id))
+        self._vdu_agent.project_id = project_id
+        return self._vdu_agent
+
     def get_agent(self, agent, project_id):
         if agent == "nsr":
             return self.get_ns_records_agent(project_id)
@@ -395,5 +466,9 @@ class OpenBatonAgentFactory(object):
             return self.get_key_agent(project_id)
         if agent == "log":
             return self.get_log_agent(project_id)
+        if agent == 'vnfci':
+            return self.get_vnfci_agnet(project_id)
+        if agent == 'vdu':
+            return self.get_vdu_agnet(project_id)
 
         raise WrongParameters('Agent %s not found' % agent)

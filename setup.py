@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="openbaton-cli",
-    version="3.2.9",
+    version="4.0.0",
     author="Open Baton",
     author_email="dev@openbaton.org",
     description="The Open Baton CLI",
@@ -18,7 +18,12 @@ setup(
     url="http://openbaton.github.io/",
     packages=find_packages(),
     scripts=["openbaton"],
-    install_requires=['requests', 'texttable', 'tabulate'],
+    install_requires=[
+        'requests',
+        'texttable',
+        'tabulate',
+        'configparser',
+    ],
     long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 4 - Beta",

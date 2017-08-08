@@ -66,7 +66,7 @@ class RestClient(object):
         if self.token is None:
             self.token = self._get_token()
         if headers is None:
-            headers = {"content-type": "application/json"}
+            headers = {"content-type": "application/json", "accept": "application/json"}
         if self.project_id is not None:
             headers["project-id"] = self.project_id
 

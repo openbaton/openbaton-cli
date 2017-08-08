@@ -1,14 +1,24 @@
-class WrongCredential(Exception):
+class _BaseException(Exception):
+    def __init__(self, message, *args):
+        super(_BaseException, self).__init__(*args)
+        self.message = message
+
+
+class WrongCredential(_BaseException):
     pass
 
 
-class WrongParameters(Exception):
+class WrongParameters(_BaseException):
     pass
 
 
-class NfvoException(Exception):
+class NfvoException(_BaseException):
     pass
 
 
-class NotFoundException(Exception):
+class NotFoundException(_BaseException):
+    pass
+
+
+class SdkException(_BaseException):
     pass

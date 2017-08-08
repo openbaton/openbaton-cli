@@ -2,18 +2,19 @@
 
 from __future__ import print_function
 
-import sys
-import texttable
+import argparse
 import getpass
 import json
 import logging.config
 import os
+import sys
+
 import tabulate
-import argparse
+import texttable
+from requests import ConnectionError
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException, NotFoundException
-from requests import ConnectionError
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
@@ -29,9 +30,11 @@ LIST_PRINT_KEY = {
     "event": ["id", "name", "networkServiceId", "virtualNetworkFunctionId", "type", "endpoint"],
     "vnfpackage": ["id", "name"],
     "csarnsd": ["id", "name"],
+    "vnfci": ["id", "name"],
     "csarvnfd": ["id", "name"],
     "key": ["id", "name", "fingerprint"],
     "log": ["id"],
+    "vdu": ["id", "name"],
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
 }
@@ -43,13 +46,15 @@ SHOW_EXCLUDE_KEY = {
     "vnfr": [],
     "vim": ["password"],
     "project": [],
-    "event": ["version", "projectId"],
+    "event": ["version"],
     "vnfpackage": [],
     "csarnsd": [],
     "csarvnfd": [],
     "market": [],
     "key": [],
     "log": [],
+    "vdu": [],
+    "vnfci": [],
     "user": ["password"]
 }
 
@@ -61,6 +66,8 @@ UNSUPPORTED_ACTIONS = {
     "vim": [],
     "project": [],
     "event": [],
+    "vnfci": ["list"],
+    "vdu": ["list", "create", "delete"],
     "vnfpackage": [],
     "csarnsd": ["list", "show", "delete"],
     "csarvnfd": ["list", "show", "delete"],
@@ -71,7 +78,15 @@ UNSUPPORTED_ACTIONS = {
 }
 
 
-def _exec_action(agent, agent_choice, action, project_id, *args):
+def _handle_params(agent_choice, action, params):
+    if agent_choice == 'vnfci':
+        if action == 'create':
+            params = ["".join(params[0:-2]), params[-2], params[-1]]
+
+    return params
+
+
+def _exec_action(factory, agent_choice, action, project_id, params):
     try:
         if action not in ACTIONS:
             print("Action %s unknown" % action)
@@ -83,23 +98,20 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
             print("{} agent does not support {} action".format(agent_choice, action))
             exit(1)
         if action == "list":
-            ag = agent.get_agent(agent_choice, project_id=project_id)
+            ag = factory.get_agent(agent_choice, project_id=project_id)
             tabulate_tabulate = tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
                                                   headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
             print(" ")
             print(tabulate_tabulate)
             print(" ")
         if action == "delete":
-            if len(args[0]) > 0:
-                params = args[0]
-            else:
+            if len(params) <= 0:
                 print("Delete takes one argument, the id")
                 exit(1)
-            agent.get_agent(agent_choice, project_id=project_id).delete(params[0])
+            factory.get_agent(agent_choice, project_id=project_id).delete(*params)
             print("Executed delete.")
         if action == "show":
-            if len(args) != 0 and len(args[0]) != 0:
-                params = args[0]
+            if len(params) != 0:
                 if isinstance(params, str):
                     params = params.split()
             else:
@@ -109,24 +121,24 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
             table.set_cols_align(["l", "r"])
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
+            params = _handle_params(agent_choice, action, params)
             table.add_rows(
-                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).find(*params),
+                get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
                                    agent_choice))
             print(" ")
             print(table.draw() + "\n")
             print(" ")
         if action == "create":
-            if len(args[0]) > 0:
-                params = args[0]
-            else:
+            if len(params) <= 0:
                 print("create takes one argument, the object to create")
                 exit(1)
             table = texttable.Texttable()
             table.set_cols_align(["l", "r"])
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
+            params = _handle_params(agent_choice,action,params)
             table.add_rows(
-                get_result_to_show(agent.get_agent(agent_choice, project_id=project_id).create(*params),
+                get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
                                    agent_choice))
             print("\n")
             print(table.draw() + "\n\n")
@@ -154,12 +166,14 @@ def _exec_action(agent, agent_choice, action, project_id, *args):
 
 def get_result_to_show(obj, agent_choice):
     if isinstance(obj, str) or type(obj) == unicode:
+        if not obj:
+            exit(0)
         try:
             obj = json.loads(obj)
         except ValueError:
             print(obj)
             exit(0)
-    if isinstance(obj,list):
+    if isinstance(obj, list):
         for item in obj:
             print(item)
         exit(0)
@@ -171,8 +185,8 @@ def get_result_to_show(obj, agent_choice):
                     if len(v) > 0:
                         tmp = []
                         if isinstance(v[0], dict):
-                            tmp.append("ids:\n")
-                            tmp.extend(["- " + x.get("id") for x in v])
+                            tmp.append(" value: \n")
+                            tmp.extend(["- " + (x.get('ip') or x.get("id")) for x in v])
                         result.append([k, "\n".join(tmp)])
                 else:
                     if isinstance(v, dict):
@@ -197,15 +211,15 @@ def get_result_as_list_find_all(start_list, agent):
 
 
 def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port, https=False):
-    agent = OpenBatonAgentFactory(nfvo_ip=nfvo_ip,
-                                  nfvo_port=nfvo_port,
-                                  https=https,
-                                  version=1,
-                                  username=username,
-                                  password=password,
-                                  project_id=project_id)
+    factory = OpenBatonAgentFactory(nfvo_ip=nfvo_ip,
+                                    nfvo_port=nfvo_port,
+                                    https=https,
+                                    version=1,
+                                    username=username,
+                                    password=password,
+                                    project_id=project_id)
 
-    _exec_action(agent, agent_choice, action, project_id, params)
+    _exec_action(factory, agent_choice, action, project_id, params)
 
 
 def start():
