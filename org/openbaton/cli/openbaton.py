@@ -37,6 +37,7 @@ LIST_PRINT_KEY = {
     "vdu": ["id", "name"],
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
+    "service": ["id", "name"],
 }
 
 SHOW_EXCLUDE_KEY = {
@@ -55,7 +56,8 @@ SHOW_EXCLUDE_KEY = {
     "log": [],
     "vdu": [],
     "vnfci": [],
-    "user": ["password"]
+    "user": ["password"],
+    "service": [],
 }
 
 UNSUPPORTED_ACTIONS = {
@@ -74,7 +76,8 @@ UNSUPPORTED_ACTIONS = {
     "market": ["list", "show", "delete"],
     "key": [],
     "log": ["list", "delete", "create"],
-    "user": []
+    "user": [],
+    "service": ["show"],
 }
 
 

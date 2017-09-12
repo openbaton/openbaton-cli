@@ -146,6 +146,13 @@ class UserAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(UserAgent, self).__init__(client, "users", project_id=project_id)
 
+class ServiceAgent(BaseAgent):
+    def __init__(self, client, project_id):
+        super(ServiceAgent, self).__init__(client, "components/services", project_id=project_id)
+
+    def create(self, entity='', _id=""):
+        headers = {"content-type":"application/json", "accept":"application/octet-stream"}
+        return self._client.post(self.url + "/create/%s" % _id, body=entity.strip(), headers=headers)
 
 class MarketAgent(BaseAgent):
     def update(self, _id, entity):
@@ -340,6 +347,7 @@ class OpenBatonAgentFactory(object):
         self._log_agent = None
         self._vnfci_agent = None
         self._vdu_agent = None
+        self._service_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -437,6 +445,11 @@ class OpenBatonAgentFactory(object):
         self._vdu_agent.project_id = project_id
         return self._vdu_agent
 
+    def get_service_agent(self, project_id):
+        if self._service_agent is None:
+            self._service_agent = ServiceAgent(self._client, project_id=project_id)
+        return self._service_agent
+
     def get_agent(self, agent, project_id):
         if agent == "nsr":
             return self.get_ns_records_agent(project_id)
@@ -470,5 +483,7 @@ class OpenBatonAgentFactory(object):
             return self.get_vnfci_agnet(project_id)
         if agent == 'vdu':
             return self.get_vdu_agnet(project_id)
+        if agent == "service":
+            return self.get_service_agent(project_id)
 
         raise WrongParameters('Agent %s not found' % agent)
