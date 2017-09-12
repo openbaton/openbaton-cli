@@ -103,6 +103,9 @@ Where the agents are:
 |            | Descriptors in   |
 |            | CSAR format      |
 +------------+------------------+
+| service    | Agent requesting |
+|            | Services         |
++------------+------------------+
 
 And actions are:
 
