@@ -103,6 +103,9 @@ Where the agents are:
 |            | Descriptors in   |
 |            | CSAR format      |
 +------------+------------------+
+| event      | Agent requesting |
+|            | Event Endpoints  |
++------------+------------------+
 | service    | Agent requesting |
 |            | Services         |
 +------------+------------------+
