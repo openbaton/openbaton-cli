@@ -150,9 +150,19 @@ class ServiceAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(ServiceAgent, self).__init__(client, "components/services", project_id=project_id)
 
-    def create(self, entity='', _id=""):
-        headers = {"content-type":"application/json", "accept":"application/octet-stream"}
-        return self._client.post(self.url + "/create/%s" % _id, body=entity.strip(), headers=headers)
+    def create(self, entity='{}', _id=""):
+        headers = {"content-type": "application/json", "accept": "application/octet-stream"}
+
+        entity = entity.strip()
+        if entity.endswith("}") or entity.endswith("]"):
+            return self._client.post(self.url + "/create/%s" % _id, json.dumps(json.loads(entity)), headers=headers)
+        else:
+            if not os.path.isfile(entity):
+                raise WrongParameters("%s is not a file")
+            with open(entity) as f:
+                file_content = f.read().replace('\n', '')
+                return self._client.post(self.url + "/create/%s" % _id, body=json.dumps(json.loads(file_content)),
+                                         headers=headers)
 
 class MarketAgent(BaseAgent):
     def update(self, _id, entity):

@@ -139,7 +139,7 @@ def _exec_action(factory, agent_choice, action, project_id, params):
             table.set_cols_align(["l", "r"])
             table.set_cols_valign(["c", "b"])
             table.set_cols_dtype(['t', 't'])
-            params = _handle_params(agent_choice,action,params)
+            params = _handle_params(agent_choice, action, params)
             table.add_rows(
                 get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
                                    agent_choice))
