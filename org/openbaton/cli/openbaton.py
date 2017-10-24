@@ -320,10 +320,15 @@ def start():
         exit(2)
 
     if project_id is None or project_id == "":
-        logger.warning("The project id is missing. Run openbaton project list for chosing a project id")
+        logger.warning("The project id is missing. Run openbaton project list for choosing a project id")
+
+    # Use an https URL when passing the 8443 port
+    https = False
+    if nfvo_port == "8443":
+        https = True
 
     openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password,
-              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port)
+              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port, https=https)
 
 
 if __name__ == '__main__':

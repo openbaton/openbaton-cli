@@ -51,7 +51,7 @@ class RestClient(object):
             headers["project-id"] = self.project_id
         final_url = self.ob_url + url
         logger.debug("executing get on url %s, with headers: %s" % (final_url, headers))
-        response = requests.get(final_url, headers=headers)
+        response = requests.get(final_url, headers=headers, verify=False)
         result = response.text
         # logger.debug(response.text)
         if _expired_token(result):
@@ -72,7 +72,7 @@ class RestClient(object):
 
         headers["Authorization"] = "Bearer %s" % self.token
         logger.debug("executing POST on url %s, with headers: %s" % (self.ob_url + url, headers))
-        response = requests.post(self.ob_url + url, data=body, headers=headers)
+        response = requests.post(self.ob_url + url, data=body, headers=headers, verify=False)
 
         if _expired_token(response.text):
             self.token = self._get_token()
@@ -93,7 +93,7 @@ class RestClient(object):
 
         ses = requests.session()
         logger.debug("executing POST on url %s, with headers: %s" % (self.ob_url + url, headers))
-        response = ses.post(self.ob_url + url, files=files, headers=headers)
+        response = ses.post(self.ob_url + url, files=files, headers=headers, verify=False)
         self.check_answer(response)
         return response.text
 
@@ -106,7 +106,7 @@ class RestClient(object):
             headers["project-id"] = self.project_id
         headers["Authorization"] = "Bearer %s" % self.token
         logger.debug("executing PUT on url %s, with headers: %s" % (self.ob_url + url, headers))
-        response = requests.put(self.ob_url + url, data=body, headers=headers)
+        response = requests.put(self.ob_url + url, data=body, headers=headers, verify=False)
         if _expired_token(response.text):
             self.token = self._get_token()
             self.put(url, body=body, headers=headers)
@@ -121,7 +121,7 @@ class RestClient(object):
             headers = {"project-id": self.project_id}
         headers["Authorization"] = "Bearer %s" % self.token
         logger.debug("executing DELETE on url %s, with headers: %s" % (self.ob_url + url, headers))
-        content = requests.delete(self.ob_url + url, headers=headers)
+        content = requests.delete(self.ob_url + url, headers=headers, verify=False)
         if _expired_token(content):
             self.token = self._get_token()
             self.delete(url)
@@ -146,7 +146,7 @@ class RestClient(object):
         response = requests.post(self.base_url + "oauth/token",
                                  headers=h,
                                  data="username=%s&password=%s&grant_type=password" % (
-                                     self.username, self.password))
+                                     self.username, self.password), verify=False)
         # logger.debug(response.text)
         res_dict = json.loads(response.text)
         token = res_dict.get("value")
