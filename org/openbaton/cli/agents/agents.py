@@ -196,7 +196,7 @@ class ServiceAgent(BaseAgent):
                 entity_json = json.loads(entity)
             except:
                 raise SdkException('The passed JSON seems to be invalid.')
-            return self._client.post(self.url + "/create/%s" % _id, json.dumps(), headers=headers)
+            return self._client.post(self.url + "/create/%s" % _id, json.dumps(entity_json), headers=headers)
         else:
             if not os.path.isfile(entity):
                 raise WrongParameters("%s is not a file")
