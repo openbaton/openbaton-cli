@@ -84,7 +84,22 @@ UNSUPPORTED_ACTIONS = {
 def _handle_params(agent_choice, action, params):
     if agent_choice == 'vnfci':
         if action == 'create':
-            params = ["".join(params[0:-2]), params[-2], params[-1]]
+            if len(params) < 3:
+                raise WrongParameters(
+                    "usage: openbaton vnfci create <vnfcomponent> <nsr_id> <vnfr_id> [vdu_id [standby]] ")
+            if len(params) == 5:  # <vnfcomponent> <nsr_id> <vnfr_id> <vdu_id> standby
+                if params[4] == 'standby':
+                    return params[0:4] + [True]
+                else:
+                    raise WrongParameters(
+                        "usage: openbaton vnfci create <vnfcomponent> <nsr_id> <vnfr_id> [vdu_id [standby]] ")
+            if len(
+                    params) == 4:  # <vnfcomponent> <nsr_id> <vnfr_id> standby    or   <vnfcomponent> <nsr_id> <vnfr_id> <vdu_id>
+                if params[3] == 'standby':
+                    return params[0:3] + ['', True]
+        if action == 'delete':
+            if len(params) < 2:
+                raise WrongParameters('usage: openbaton vnfci delete <nsr_id> <vnfr_id> [vdu_id [vnfci_id]]')
 
     return params
 
@@ -108,6 +123,7 @@ def _exec_action(factory, agent_choice, action, project_id, params):
             print(tabulate_tabulate)
             print(" ")
         if action == "delete":
+            params = _handle_params(agent_choice, action, params)
             if len(params) <= 0:
                 print("Delete takes one argument, the id")
                 exit(1)
@@ -233,6 +249,7 @@ def start():
     parser.add_argument("-d", "--debug", help="show debug prints", action="store_true")
     parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip")
     parser.add_argument("--nfvo-port", help="the openbaton nfvo port")
+    parser.add_argument("-s", "--ssl", help="use HTTPS instead of HTTP", action="store_true")
 
     parser.add_argument("agent",
                         help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
@@ -272,6 +289,7 @@ def start():
         nfvo_port = args.nfvo_port
     if args.project_id is not None:
         project_id = args.project_id
+    ssl_enabled = args.ssl
 
     if project_id is None:
         if sys.version_info[0] < 3:
@@ -322,13 +340,8 @@ def start():
     if project_id is None or project_id == "":
         logger.warning("The project id is missing. Run openbaton project list for choosing a project id")
 
-    # Use an https URL when passing the 8443 port
-    https = False
-    if nfvo_port == "8443":
-        https = True
-
     openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password,
-              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port, https=https)
+              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port, https=ssl_enabled)
 
 
 if __name__ == '__main__':
