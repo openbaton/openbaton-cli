@@ -25,6 +25,7 @@ def _get_parents_obj_id_from_id(id_to_find, main_agent, first_level, second_leve
     # if no parent object was found, we can safely assume that the child object does not exist
     raise NotFoundException('No {} found with ID {}'.format(first_level, id_to_find))
 
+
 class BaseAgent(object):
     def __init__(self, client, url, project_id=None):
         self._client = client
@@ -41,22 +42,40 @@ class BaseAgent(object):
     def update(self, _id, entity):
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
-            return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(json.loads(entity))))
+            try:
+                entity_json = json.loads(entity)
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+            return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity_json)))
         else:
+            if not os.path.isfile(entity):
+                raise WrongParameters("{} is not a file".format(entity))
             with open(entity) as f:
-                return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(f.read().replace('\n', ''))))
+                try:
+                    entity_json = f.read().replace('\n', '')
+                except:
+                    raise SdkException('The passed JSON seems to be invalid.')
+                return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity_json)))
 
     def create(self, entity='{}', _id=""):
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
-            result = json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(json.loads(entity))))
+            try:
+                entity_json = json.loads(entity)
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+            result = json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(entity_json)))
             return result
         else:
             if not os.path.isfile(entity):
-                raise WrongParameters("%s is not a file")
+                raise WrongParameters("{} is not a file".format(entity))
             with open(entity) as f:
                 file_content = f.read().replace('\n', '')
-                return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(json.loads(file_content))))
+                try:
+                    entity_json = json.loads(file_content)
+                except:
+                    raise SdkException('The passed JSON seems to be invalid.')
+                return json.loads(self._client.post(self.url + "/%s" % _id, json.dumps(entity_json)))
 
 
 class ProjectAgent(BaseAgent):
@@ -98,20 +117,32 @@ class VNFCInstanceAgent(BaseAgent):
             "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances/%s" % (self.url, nsr_id, vnfr_id, vdu_id, vnfci_id))
 
     def create(self, entity, nsr_id, vnfr_id, vdu_id="", standby=False, ):
-        try:
-            entity_dict = json.loads(entity)
-        except:
-            raise WrongParameters(
-                "Not able to parse VNFComponent. usage: openbaton vnfci create <vnfcomponent> <nsr_id> <vnfr_id> ["
-                "stanby] [<vdu_id>] ")
-        if 'vnfComponent' not in entity_dict.keys() or not isinstance(entity_dict.get("vnfComponent"), dict):
-            raise SdkException("Body must contain VNFComponent and must be a json object")
+        entity = entity.strip()
+        if entity.endswith("}") or entity.endswith("]"):
+            try:
+                entity_dict = json.loads(entity)
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+        else:
+            if not os.path.isfile(entity):
+                raise WrongParameters("{} is neither a file nor does it seem to be valid JSON".format(entity))
+            with open(entity) as f:
+                file_content = f.read().replace('\n', '')
+                try:
+                    entity_dict = json.loads(file_content)
+                except:
+                    raise SdkException('The passed JSON seems to be invalid.')
+
         if standby:
+            if (vdu_id is None or vdu_id == ''):
+                raise WrongParameters('When creating standby VNFCInstances you have to specify the VDU.')
             return self._client.post(
-                "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances/standby" % (self.url, nsr_id, vnfr_id, vdu_id), entity)
+                "{}/{}/vnfrecords/{}/vdunits/{}/vnfcinstances/standby".format(self.url, nsr_id, vnfr_id, vdu_id),
+                json.dumps(entity_dict))
         else:
             return self._client.post(
-                "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances" % (self.url, nsr_id, vnfr_id, vdu_id), entity)
+                "{}/{}/vnfrecords/{}/vdunits/{}/vnfcinstances".format(self.url, nsr_id, vnfr_id, vdu_id),
+                json.dumps(entity_dict))
 
     def update(self, _id, entity):
         raise WrongParameters('VNFC Instance agent is allowed only to execute "create" and "delete"')
@@ -119,9 +150,10 @@ class VNFCInstanceAgent(BaseAgent):
     def find(self, _id=""):
         if not _id:
             raise WrongParameters("Please provide the id")
-        nsr_id, vnfr_id, vdu_id, vnfci = _get_parents_obj_id_from_id(_id, NSRAgent(self._client,self._client.project_id),'vnfr','vdu', 'vnfc_instance')
+        nsr_id, vnfr_id, vdu_id, vnfci = _get_parents_obj_id_from_id(_id,
+                                                                     NSRAgent(self._client, self._client.project_id),
+                                                                     'vnfr', 'vdu', 'vnfc_instance')
         return vnfci
-
 
 
 class KeyAgent(BaseAgent):
@@ -132,7 +164,11 @@ class KeyAgent(BaseAgent):
 
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
-            result = json.loads(self._client.post(self.url, json.dumps(json.loads(entity))))
+            try:
+                entity_json = json.loads(entity)
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+            result = json.loads(self._client.post(self.url, json.dumps(entity_json)))
             return result
         else:  # generate
             key = self._client.post("%s/%s" % (self.url, 'generate'), entity)
@@ -146,6 +182,7 @@ class UserAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(UserAgent, self).__init__(client, "users", project_id=project_id)
 
+
 class ServiceAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(ServiceAgent, self).__init__(client, "components/services", project_id=project_id)
@@ -155,14 +192,23 @@ class ServiceAgent(BaseAgent):
 
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
-            return self._client.post(self.url + "/create/%s" % _id, json.dumps(json.loads(entity)), headers=headers)
+            try:
+                entity_json = json.loads(entity)
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+            return self._client.post(self.url + "/create/%s" % _id, json.dumps(), headers=headers)
         else:
             if not os.path.isfile(entity):
                 raise WrongParameters("%s is not a file")
             with open(entity) as f:
                 file_content = f.read().replace('\n', '')
-                return self._client.post(self.url + "/create/%s" % _id, body=json.dumps(json.loads(file_content)),
+                try:
+                    entity_json = json.loads(file_content)
+                except:
+                    raise SdkException('The passed JSON seems to be invalid.')
+                return self._client.post(self.url + "/create/%s" % _id, body=json.dumps(entity_json),
                                          headers=headers)
+
 
 class MarketAgent(BaseAgent):
     def update(self, _id, entity):
@@ -277,22 +323,23 @@ class SubAgent(BaseAgent):
         self._main_agent = main_agent
 
     def update(self, _id, entity):
-        parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
+        parent_obj_id, _ = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj)
         return super(SubAgent, self).update(parent_obj_id + "/" + self.sub_url + "/" + _id, entity)
 
     def find(self, _id=""):
         if not _id:
-            raise WrongParameters("Please provide the id, only action show is allowed on this agent")
-        parent_obj_id, obj = _get_parents_obj_id_from_id(_id,self._main_agent,self.sub_obj)
+            raise WrongParameters(
+                "Please provide the ID. The 'show' action is allowed on this agent but not the 'list' action.")
+        parent_obj_id, obj = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj)
         return json.dumps(obj)
 
     def delete(self, _id):
-        parent_obj_id = self.__get_parent_obj_id_from_id__(_id)
+        parent_obj_id, _ = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj)
         super(SubAgent, self).delete(parent_obj_id + "/" + self.sub_url + "/" + _id)
 
     def create(self, entity='', _id=""):
         if _id is None or _id == "":
-            raise WrongParameters("Please provide the id  of the object where to create this entity")
+            raise WrongParameters("Please provide the id of the object where to create this entity")
         return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
 
 
@@ -308,18 +355,16 @@ class VNFRAgent(SubAgent):
 class VDUAgent(SubAgent):
     def __init__(self, client, project_id, main_agent):
         super(VDUAgent, self).__init__(client=client,
-                                        project_id=project_id,
-                                        main_agent=main_agent,
-                                        sub_url='vnfrecords',
-                                        sub_obj="vnfr")
+                                       project_id=project_id,
+                                       main_agent=main_agent,
+                                       sub_url='vnfrecords',
+                                       sub_obj="vnfr")
 
     def find(self, _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id, only action show is allowed on this agent")
         nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
         return vdu
-
-
 
 
 class OpenBatonAgentFactory(object):
@@ -451,7 +496,8 @@ class OpenBatonAgentFactory(object):
 
     def get_vdu_agnet(self, project_id):
         if self._vdu_agent is None:
-            self._vdu_agent = VDUAgent(self._client, project_id=project_id, main_agent=self.get_ns_records_agent(project_id))
+            self._vdu_agent = VDUAgent(self._client, project_id=project_id,
+                                       main_agent=self.get_ns_records_agent(project_id))
         self._vdu_agent.project_id = project_id
         return self._vdu_agent
 
