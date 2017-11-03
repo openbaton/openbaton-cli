@@ -149,7 +149,7 @@ class RestClient(object):
                                      self.username, self.password), verify=False)
         # logger.debug(response.text)
         res_dict = json.loads(response.text)
-        token = res_dict.get("value")
+        token = res_dict.get("value") or res_dict.get("access_token")
         logger.debug("Got token %s" % token)
         if token is None:
             if res_dict.get("detailMessage") is not None:
