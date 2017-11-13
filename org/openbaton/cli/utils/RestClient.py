@@ -8,7 +8,7 @@ import requests
 from org.openbaton.cli.errors.errors import WrongCredential, NfvoException
 
 logger = logging.getLogger("org.openbaton.cli.RestClient")
-WRONG_STATUS = [500, 404, 405, 422]
+WRONG_STATUS = [500, 400, 404, 405, 422]
 
 
 def _expired_token(content):
