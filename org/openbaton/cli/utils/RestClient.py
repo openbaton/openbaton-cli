@@ -72,6 +72,7 @@ class RestClient(object):
 
         headers["Authorization"] = "Bearer %s" % self.token
         logger.debug("executing POST on url %s, with headers: %s" % (self.ob_url + url, headers))
+        logger.debug("With body: %s" % body)
         response = requests.post(self.ob_url + url, data=body, headers=headers, verify=False)
 
         if _expired_token(response.text):
