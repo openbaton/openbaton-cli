@@ -3,18 +3,12 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
-# import ConfigParser
-import logging
+
 import unittest
 
-import sys
-
 from org.openbaton.cli.openbaton import openbaton
+from org.openbaton.sdk.client import OBClient
 
-logger = logging.getLogger()
-logger.level = logging.DEBUG
-stream_handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(stream_handler)
 
 class MyTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
@@ -27,25 +21,37 @@ class MyTestCase(unittest.TestCase):
         self.nfvo_project_id = config.get('nfvo', 'nfvo_project_id')
         super(MyTestCase, self).__init__(methodName)
 
-    def test_scale_out(self, params=""):
-        logging.basicConfig(level=logging.DEBUG)
-        agent_choice = 'vdu-vnfd'
-        action = 'show'
+    def test_cli(self):
+        if True:
+            return
+        agent_choice = 'vnfci'
+        action = 'create'
         params = [
-                # '7f79c678-2bb5-4f11-a2f2-533967a1a487'   #vdu-nsr
-                'dfb1cfa9-43b2-4790-86b7-7023bbf47afd'    #vdu-vnfd
-                # ,'shared=true'
-            #,'{"securityGroup":"default"}'
+            '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
+            '69b73f73-745e-4138-ad35-320d26127c9a',
+            'c1434dcb-2ab2-4138-bc21-308d225c9f9d',
         ]
         openbaton(agent_choice=agent_choice,
                   action=action,
                   params=params,
                   project_id=self.nfvo_project_id,
-                  username= self.nfvo_username,
+                  username=self.nfvo_username,
                   password=self.nfvo_password,
                   nfvo_ip=self.nfvo_ip,
                   nfvo_port=self.nfvo_port)
         # self.assertEqual(True, False)
+
+    def test_ob_client(self):
+        cl = OBClient(nfvo_ip=self.nfvo_ip,
+                      nfvo_port=self.nfvo_port,
+                      username=self.nfvo_username,
+                      password=self.nfvo_password,
+                      project_name="default",
+                      https=False,
+                      version=1)
+
+        for p in cl.list_projects():
+            print(p)
 
 
 if __name__ == '__main__':

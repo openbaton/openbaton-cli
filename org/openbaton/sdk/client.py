@@ -22,11 +22,12 @@ class OBClient(object):
         :param version: 1 for now...
         """
 
-        self.https = https or get_config("nfvo", "https", get_config_file_location()).lower() == 'true'
-        self.username = username or get_config("nfvo", "username", get_config_file_location())
-        self.password = password or get_config("nfvo", "password", get_config_file_location())
-        self.nfvo_ip = nfvo_ip or get_config("nfvo", "ip", get_config_file_location())
-        self.nfvo_port = nfvo_port or get_config("nfvo", "port", get_config_file_location())
+        self.https = https
+        self.username = username
+        self.password = password
+        self.nfvo_ip = nfvo_ip
+        self.nfvo_port = nfvo_port
+        self.version = version
 
         self.agent_factory = OpenBatonAgentFactory(nfvo_ip=self.nfvo_ip,
                                                    nfvo_port=self.nfvo_port,
@@ -72,7 +73,7 @@ class OBClient(object):
 
         if isinstance(user, dict):
             user = json.dumps(user)
-        return self.agent_factory.get_user_agent(self.project_id).create(user)
+        return json.loads(self.agent_factory.get_user_agent(self.project_id).create(user))
 
     def create_vim_instance(self, vim_instance):
         for vi in self.list_vim_instances():
@@ -85,10 +86,10 @@ class OBClient(object):
         return self.agent_factory.get_vim_instance_agent(self.project_id).create(vim_instance)
 
     def list_users(self):
-        return self.agent_factory.get_user_agent(self.project_id).find()
+        return json.loads(self.agent_factory.get_user_agent(self.project_id).find())
 
     def list_projects(self):
-        return self.agent_factory.get_project_agent().find()
+        return json.loads(self.agent_factory.get_project_agent().find())
 
     def list_vim_instances(self):
         return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find())
