@@ -2,12 +2,13 @@ import ConfigParser
 import unittest
 
 from org.openbaton.cli.openbaton import openbaton
+from org.openbaton.sdk.client import OBClient
 
 
 class MyTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         config = ConfigParser.ConfigParser()
-        config.read('tests/nfvo.properties.ini')
+        config.read('./nfvo.properties.ini')
         self.nfvo_ip = config.get('nfvo', 'nfvo_ip')
         self.nfvo_port = config.get('nfvo', 'nfvo_port')
         self.nfvo_username = config.get('nfvo', 'nfvo_username')
@@ -15,7 +16,9 @@ class MyTestCase(unittest.TestCase):
         self.nfvo_project_id = config.get('nfvo', 'nfvo_project_id')
         super(MyTestCase, self).__init__(methodName)
 
-    def test_scale_out(self, params=""):
+    def test_cli(self):
+        if True:
+            return
         agent_choice = 'vnfci'
         action = 'create'
         params = [
@@ -32,6 +35,18 @@ class MyTestCase(unittest.TestCase):
                   nfvo_ip=self.nfvo_ip,
                   nfvo_port=self.nfvo_port)
         # self.assertEqual(True, False)
+
+    def test_ob_client(self):
+        cl = OBClient(nfvo_ip=self.nfvo_ip,
+                      nfvo_port=self.nfvo_port,
+                      username=self.nfvo_username,
+                      password=self.nfvo_password,
+                      project_name="default",
+                      https=False,
+                      version=1)
+
+        for p in cl.list_projects():
+            print(p)
 
 
 if __name__ == '__main__':
