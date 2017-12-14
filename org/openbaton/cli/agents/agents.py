@@ -7,6 +7,9 @@ from org.openbaton.cli.errors.errors import WrongParameters, NotFoundException, 
 from org.openbaton.cli.utils.RestClient import RestClient
 
 
+WRONG_UPDATE_TYPES = [dict, list]
+
+
 def _get_parents_obj_id_from_id(id_to_find, main_agent, first_level, second_level=None, third_level=None):
     for obj in json.loads(main_agent.find()):
         for sub_obj in obj.get(first_level):
@@ -26,6 +29,35 @@ def _get_parents_obj_id_from_id(id_to_find, main_agent, first_level, second_leve
     raise NotFoundException('No {} found with ID {}'.format(first_level, id_to_find))
 
 
+def _cast(correct_type, new_entity):
+    if correct_type == bool:
+
+        true_ = new_entity.lower() == 'true'
+        false_ = new_entity.lower() == 'false'
+        if true_:
+            return true_
+        if false_:
+            return not false_
+        else:
+            raise SdkException("Boolean value can only be 'true' or 'false'")
+    else:
+        return correct_type(new_entity)
+
+def _formatUpdateValue(entity):
+    # entitiy can be either a json or a str like key=value,key2=value2 or a list like key=value key=value
+    new_entity = {}
+    if len(entity) == 1:
+        entity = entity[0]
+        if entity.endswith("}") or entity.endswith("]"):
+            new_entity = json.loads(entity)
+        else:  # for a single key = value
+            new_entity = {entity.split("=")[0]: entity.split("=")[1]}
+    else:  # sure key=vale key1=value1
+        for val in entity:
+            new_entity[val.split("=")[0]] = (val.split("=")[1])
+    return new_entity
+
+
 class BaseAgent(object):
     def __init__(self, client, url, project_id=None):
         self._client = client
@@ -40,22 +72,25 @@ class BaseAgent(object):
         self._client.delete(self.url + "/%s" % _id)
 
     def update(self, _id, entity):
-        entity = entity.strip()
-        if entity.endswith("}") or entity.endswith("]"):
-            try:
-                entity_json = json.loads(entity)
-            except:
-                raise SdkException('The passed JSON seems to be invalid.')
-            return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity_json)))
-        else:
-            if not os.path.isfile(entity):
-                raise WrongParameters("{} is not a file".format(entity))
-            with open(entity) as f:
-                try:
-                    entity_json = f.read().replace('\n', '')
-                except:
-                    raise SdkException('The passed JSON seems to be invalid.')
-                return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity_json)))
+
+        new_entity = _formatUpdateValue(entity)
+        old_value = json.loads(self._client.get(self.url + "/%s" % _id))
+
+        for k, v in new_entity.items():
+            if old_value.has_key(k):
+                if type(old_value[k]) in WRONG_UPDATE_TYPES:
+                    raise SdkException('Cannot update a sub object, execute update directly to that entity')
+
+                if isinstance(old_value[k], type(new_entity[k])):
+                    old_value[k] = new_entity[k]
+                else:
+                    correct_type = type(old_value[k])
+                    new_entity[k] = _cast(correct_type, new_entity[k])
+                    old_value[k] = new_entity[k]
+            else:
+                raise SdkException('Key does not exist for the entity.')
+
+        return self._client.put(self.url + "/%s" % _id, json.dumps(old_value))
 
     def create(self, entity='{}', _id=""):
         entity = entity.strip()
@@ -269,7 +304,6 @@ class VNFPackageAgent(BaseAgent):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".tar"):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
 
-
 class CSARNSDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(CSARNSDAgent, self).__init__(client, "csar-nsd", project_id=project_id)
@@ -366,6 +400,28 @@ class VDUAgent(SubAgent):
         nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
         return vdu
 
+    def update(self, _id, entity):
+
+        new_entity = _formatUpdateValue(entity)
+
+        nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+        test_url = self.url + "/" + nsr_id + "/" + self.sub_url + "/" + vnfr_id + "/vdunits/" + _id
+        # "{}/{}/vnfrecords/{}/vdunits/{}".format(self.url, nsr_id, vnfr_id, _id)
+        old_value = json.loads(self._client.get("{}/{}/vnfrecords/{}/vdunits/{}".format(self.url, nsr_id, vnfr_id, _id)))
+
+        for k, v in new_entity.items():
+            if old_value.has_key(k):
+                if type(old_value[k]) in WRONG_UPDATE_TYPES:
+                    raise SdkException('Cannot update a sub object, execute update directly to that entity')
+
+                if isinstance(old_value[k], type(new_entity[k])):
+                    old_value[k] = new_entity[k]
+                else:
+                    correct_type = type(old_value[k])
+                    new_entity[k] = _cast(correct_type, new_entity[k])
+                    old_value[k] = new_entity[k]
+
+        return super(SubAgent, self).update(test_url, new_entity)
 
 class OpenBatonAgentFactory(object):
     def __init__(self, nfvo_ip="localhost", nfvo_port="8080", https=False, version=1, username=None, password=None,
@@ -541,5 +597,4 @@ class OpenBatonAgentFactory(object):
             return self.get_vdu_agnet(project_id)
         if agent == "service":
             return self.get_service_agent(project_id)
-
         raise WrongParameters('Agent %s not found' % agent)

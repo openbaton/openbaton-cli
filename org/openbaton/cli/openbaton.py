@@ -18,7 +18,7 @@ from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, Nf
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
-ACTIONS = ["list", "show", "delete", "create"]
+ACTIONS = ["list", "show", "delete", "create", "update"]
 
 LIST_PRINT_KEY = {
     "nsd": ["id", "name", "vendor", "version"],
@@ -158,6 +158,22 @@ def _exec_action(factory, agent_choice, action, project_id, params):
             params = _handle_params(agent_choice, action, params)
             table.add_rows(
                 get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
+                                   agent_choice))
+            print("\n")
+            print(table.draw() + "\n\n")
+        if action == "update":
+            if len(params) >= 2:
+                _id = params[0]
+                update_values = params[1:]
+            else:
+                print("update takes at least 2 arguments, the object id to update and the fields to update")
+                exit(1)
+            table = texttable.Texttable()
+            table.set_cols_align(["l", "r"])
+            table.set_cols_valign(["c", "b"])
+            table.set_cols_dtype(['t', 't'])
+            table.add_rows(
+                get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).update(_id, update_values),
                                    agent_choice))
             print("\n")
             print(table.draw() + "\n\n")

@@ -1,8 +1,15 @@
 import ConfigParser
+import logging
 import unittest
+
+import sys
 
 from org.openbaton.cli.openbaton import openbaton
 
+logger = logging.getLogger()
+logger.level = logging.DEBUG
+stream_handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(stream_handler)
 
 class MyTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
@@ -16,12 +23,13 @@ class MyTestCase(unittest.TestCase):
         super(MyTestCase, self).__init__(methodName)
 
     def test_scale_out(self, params=""):
-        agent_choice = 'vnfci'
-        action = 'create'
+        logging.basicConfig(level=logging.DEBUG)
+        agent_choice = 'vnfpackage'
+        action = 'update'
         params = [
-            '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
-            '69b73f73-745e-4138-ad35-320d26127c9a',
-            'c1434dcb-2ab2-4138-bc21-308d225c9f9d',
+            'a19684cd-5914-4ae8-b3fa-4623ca8d3f4d',
+            # 'type=lxd'
+             # '{"securityGroup":"default"}'
         ]
         openbaton(agent_choice=agent_choice,
                   action=action,
