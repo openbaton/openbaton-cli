@@ -1,4 +1,9 @@
-import ConfigParser
+try:
+   import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+# import ConfigParser
 import logging
 import unittest
 
@@ -24,18 +29,22 @@ class MyTestCase(unittest.TestCase):
 
     def test_scale_out(self, params=""):
         logging.basicConfig(level=logging.DEBUG)
-        agent_choice = 'vnfpackage'
+        agent_choice = 'vnfci'
         action = 'update'
         params = [
-            'a19684cd-5914-4ae8-b3fa-4623ca8d3f4d',
-            # 'type=lxd'
-             # '{"securityGroup":"default"}'
+                '5402d256-42ec-4537-90e1-64078c8e577e'
+                  # 'dfb1cfa9-43b2-4790-86b7-7023bbf47afd'    #vdu-vnfd
+                 #    'fa380196-74a0-44af-bb52-e0f99499150e'    #vdu-nsd
+                # ,'/home/can/Documents/icscf_relation_joined.sh'
+                 ,'ips=192.168.55.231'
+               # ,'shared=true'
+            #'{"securityGroup":"default"}'
         ]
         openbaton(agent_choice=agent_choice,
                   action=action,
                   params=params,
                   project_id=self.nfvo_project_id,
-                  username=self.nfvo_username,
+                  username= self.nfvo_username,
                   password=self.nfvo_password,
                   nfvo_ip=self.nfvo_ip,
                   nfvo_port=self.nfvo_port)

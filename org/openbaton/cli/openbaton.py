@@ -38,6 +38,9 @@ LIST_PRINT_KEY = {
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
     "service": ["id", "name"],
+    "script": ["id"],
+    "vdu-nsr":[],
+    "vdu-vnfd":[]
 }
 
 SHOW_EXCLUDE_KEY = {
@@ -58,6 +61,9 @@ SHOW_EXCLUDE_KEY = {
     "vnfci": [],
     "user": ["password"],
     "service": [],
+    "script":[],
+    "vdu-nsr":["update"],
+    "vdu-vnfd":["update"]
 }
 
 UNSUPPORTED_ACTIONS = {
@@ -78,6 +84,9 @@ UNSUPPORTED_ACTIONS = {
     "log": ["list", "delete", "create"],
     "user": [],
     "service": ["show"],
+    "script":["list","create","delete"],
+    "vdu-nsr":[],
+    "vdu-vnfd":[]
 }
 
 
@@ -200,7 +209,7 @@ def _exec_action(factory, agent_choice, action, project_id, params):
 
 
 def get_result_to_show(obj, agent_choice):
-    if isinstance(obj, str) or type(obj) == unicode:
+    if isinstance(obj, str):   # or isinstance(obj, unicode): #type(obj) == unicode:
         if not obj:
             exit(0)
         try:
