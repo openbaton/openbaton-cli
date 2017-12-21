@@ -209,7 +209,7 @@ def _exec_action(factory, agent_choice, action, project_id, params):
 
 
 def get_result_to_show(obj, agent_choice):
-    if isinstance(obj, str):   # or isinstance(obj, unicode): #type(obj) == unicode:
+    if isinstance(obj, str): 
         if not obj:
             exit(0)
         try:
