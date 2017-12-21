@@ -403,9 +403,8 @@ class ScriptAgent(SubAgent):
                 except:
                     raise SdkException('The passed JSON seems to be invalid.')
             response = self._client.put_file("{}/{}/{}/{}".format(self.url,vnfpackage_id,self.sub_url,_id), entity_json)
-            # script['payload'] = json.dumps(response)
-            # return {'payload':response}
-            return json.loads(response)
+            script['payload'] = json.dumps(response)
+            return script
         else:
             raise WrongParameters("{} is not a file".format(file_path))
 
