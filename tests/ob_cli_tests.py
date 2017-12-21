@@ -29,16 +29,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_scale_out(self, params=""):
         logging.basicConfig(level=logging.DEBUG)
-        agent_choice = 'script'
+        agent_choice = 'vim'
         action = 'update'
         params = [
                 '8bd72002-b338-4b5b-98fd-1b46d27e40bb'
-                #   # 'dfb1cfa9-43b2-4790-86b7-7023bbf47afd'    #vdu-vnfd
-                 #    'fa380196-74a0-44af-bb52-e0f99499150e'    #vdu-nsd
-                ,'/home/can/Documents/icscf_relation_joined.sh'
-                 ,'ips=192.168.55.231'
-               # ,'shared=true'
-            #'{"securityGroup":"default"}'
+                ,'shared=true'
+            #,'{"securityGroup":"default"}'
         ]
         openbaton(agent_choice=agent_choice,
                   action=action,
