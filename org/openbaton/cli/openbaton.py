@@ -34,12 +34,11 @@ LIST_PRINT_KEY = {
     "csarvnfd": ["id", "name"],
     "key": ["id", "name", "fingerprint"],
     "log": ["id"],
-    "vdu": ["id", "name"],
+    "vdu": ["id", "name"],     # vdu - nsr
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
     "service": ["id", "name"],
     "script": ["id"],
-    "vdu-nsr":[],
     "vdu-vnfd":[]
 }
 
@@ -209,7 +208,7 @@ def _exec_action(factory, agent_choice, action, project_id, params):
 
 
 def get_result_to_show(obj, agent_choice):
-    if isinstance(obj, str): 
+    if isinstance(obj, str):
         if not obj:
             exit(0)
         try:

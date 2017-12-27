@@ -633,8 +633,10 @@ class OpenBatonAgentFactory(object):
             return self.get_log_agent(project_id)
         if agent == 'vnfci':
             return self.get_vnfci_agnet(project_id)
-        if agent.split("-")[0] == 'vdu':
+        if "-" in agent and agent.split("-")[0] == 'vdu':
                 return self.get_vdu_agnet(project_id,agent.split("-")[1])
+        if agent == "vdu":
+            return self.get_vdu_agnet(project_id, "nsr")
         if agent == "service":
             return self.get_service_agent(project_id)
         if agent == "script":

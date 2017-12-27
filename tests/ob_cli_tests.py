@@ -29,11 +29,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_scale_out(self, params=""):
         logging.basicConfig(level=logging.DEBUG)
-        agent_choice = 'vim'
-        action = 'update'
+        agent_choice = 'vdu-vnfd'
+        action = 'show'
         params = [
-                '8bd72002-b338-4b5b-98fd-1b46d27e40bb'
-                ,'shared=true'
+                # '7f79c678-2bb5-4f11-a2f2-533967a1a487'   #vdu-vnfr
+                'dfb1cfa9-43b2-4790-86b7-7023bbf47afd'    #vdu-vnfd
+                # ,'shared=true'
             #,'{"securityGroup":"default"}'
         ]
         openbaton(agent_choice=agent_choice,
