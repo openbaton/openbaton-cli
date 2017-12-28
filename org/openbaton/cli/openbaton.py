@@ -149,7 +149,7 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
                 print("Show takes one argument, the id")
                 exit(1)
             params = _handle_params(agent_choice, action, params)
-            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
+            result = get_result_to_show(json.loads(factory.get_agent(agent_choice, project_id=project_id).find(*params)),
                                    agent_choice, format)
             if format == "table":
                 table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
@@ -183,15 +183,17 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
             else:
                 print("update takes at least 2 arguments, the object id to update and the fields to update")
                 exit(1)
-            table = texttable.Texttable()
-            table.set_cols_align(["l", "r"])
-            table.set_cols_valign(["c", "b"])
-            table.set_cols_dtype(['t', 't'])
-            table.add_rows(
-                get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).update(_id, update_values),
-                                   agent_choice))
-            print("\n")
-            print(table.draw() + "\n\n")
+            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).update(_id, update_values),
+                                   agent_choice, format)
+            if format == "table":
+                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
+                print(" ")
+                print(table)
+                print(" ")
+            elif format == "json":
+                print(" ")
+                print(json.dumps(result, indent = 4))
+                print(" ")
     except WrongCredential as e:
         print("")
         print("ERROR: %s" % e.message)

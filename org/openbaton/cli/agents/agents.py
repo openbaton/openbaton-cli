@@ -425,29 +425,29 @@ class VDUAgent(SubAgent):
                                            main_agent=main_agent,
                                            sub_url='vnfrecords',
                                            sub_obj="vnfr")
-        else:   # main_agent == "vnf-descriptors"
+        else:   # main_agent == "ns-descriptors"
             super(VDUAgent, self).__init__(client=client,
                                            project_id=project_id,
                                            main_agent=main_agent,
-                                           sub_url='vdu',
-                                           sub_obj="vdu")
+                                           sub_url='vnfdescriptors',
+                                           sub_obj="vnfd")
 
     def find(self, _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id, only action show is allowed on this agent")
         if self._main_agent.url == "ns-records":
             nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
-        else:     # self._main_agent == "vnf-descriptors"
-            vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj)
+        else:     # self._main_agent == "ns-descriptors"
+            nsd_id, vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
         return vdu
 
     def update(self, _id, entity):
         if self._main_agent.url == "ns-records":
             nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
-            url = self.url + "/" + nsr_id + "/" + self.sub_url + "/" + "vdus" + _id
-        else:    # self._main_agent == "vnf-descriptors"
-            vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj)
-            url = self.url + "/" + vnfd_id + "/" + "vdus" + _id
+            url = self.url + "/" + nsr_id + "/" + self.sub_url + "/" + vnfr_id + "/" + "vdus/" + _id
+        else:    # self._main_agent == "ns-descriptors"
+            nsd_id, vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+            url = self.url + "/" + nsd_id + "/" + self.sub_url + "/" + vnfd_id + "/" + "vdus/" + _id
         old_value = _updateEntity(vdu,entity)
         return json.loads(self._client.put(url, json.dumps(old_value)))
 
@@ -584,9 +584,9 @@ class OpenBatonAgentFactory(object):
             if parent == "nsr":
                 self._vdu_agent = VDUAgent(self._client, project_id=project_id,
                                            main_agent=self.get_ns_records_agent(project_id))
-            else:    # if parent == "vnfd"
+            else:    # if parent == "nsd"
                 self._vdu_agent = VDUAgent(self._client, project_id=project_id,
-                                           main_agent=self.get_vnf_descriptor_agent(project_id))
+                                           main_agent=self.get_ns_descriptor_agent(project_id))
         self._vdu_agent.project_id = project_id
         return self._vdu_agent
 
@@ -633,9 +633,9 @@ class OpenBatonAgentFactory(object):
             return self.get_log_agent(project_id)
         if agent == 'vnfci':
             return self.get_vnfci_agnet(project_id)
-        if "-" in agent and agent.split("-")[0] == 'vdu':
+        if "-" in agent and agent.split("-")[0] == 'vdu':  # vdu-nsd
                 return self.get_vdu_agnet(project_id,agent.split("-")[1])
-        if agent == "vdu":
+        if agent == "vdu":                      # vdu-nsr
             return self.get_vdu_agnet(project_id, "nsr")
         if agent == "service":
             return self.get_service_agent(project_id)
