@@ -34,7 +34,7 @@ LIST_PRINT_KEY = {
     "csarvnfd": ["id", "name"],
     "key": ["id", "name", "fingerprint"],
     "log": ["id"],
-    "vdu": ["id", "name"],     # vdu - nsr
+    "vdu": ["id", "name"],     # vdu-nsr
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
     "service": ["id", "name"],
@@ -56,12 +56,11 @@ SHOW_EXCLUDE_KEY = {
     "market": [],
     "key": [],
     "log": [],
-    "vdu": [],
+    "vdu": [],  # vdu-nsr
     "vnfci": [],
     "user": ["password"],
     "service": [],
     "script":[],
-    "vdu-nsr":["update"],
     "vdu-vnfd":["update"]
 }
 
@@ -74,7 +73,7 @@ UNSUPPORTED_ACTIONS = {
     "project": [],
     "event": [],
     "vnfci": ["list"],
-    "vdu": ["list", "create", "delete"],
+    "vdu": ["list", "create", "delete"],  #vdu-nsr
     "vnfpackage": [],
     "csarnsd": ["list", "show", "delete"],
     "csarvnfd": ["list", "show", "delete"],
@@ -84,7 +83,6 @@ UNSUPPORTED_ACTIONS = {
     "user": [],
     "service": ["show"],
     "script":["list","create","delete"],
-    "vdu-nsr":[],
     "vdu-vnfd":[]
 }
 

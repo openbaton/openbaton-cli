@@ -32,7 +32,7 @@ class MyTestCase(unittest.TestCase):
         agent_choice = 'vdu-vnfd'
         action = 'show'
         params = [
-                # '7f79c678-2bb5-4f11-a2f2-533967a1a487'   #vdu-vnfr
+                # '7f79c678-2bb5-4f11-a2f2-533967a1a487'   #vdu-nsr
                 'dfb1cfa9-43b2-4790-86b7-7023bbf47afd'    #vdu-vnfd
                 # ,'shared=true'
             #,'{"securityGroup":"default"}'
