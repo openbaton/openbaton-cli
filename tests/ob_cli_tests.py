@@ -14,13 +14,14 @@ class MyTestCase(unittest.TestCase):
         self.nfvo_username = config.get('nfvo', 'nfvo_username')
         self.nfvo_password = config.get('nfvo', 'nfvo_password')
         self.nfvo_project_id = config.get('nfvo', 'nfvo_project_id')
+        self.nfvo_format = config.get('nfvo','nfvo_format')
         super(MyTestCase, self).__init__(methodName)
 
     def test_cli(self):
         # if True:
         #     return
         agent_choice = 'vnfpackage'
-        action = 'create'
+        action = 'list'
         params = [
                   '/opt/openbaton/openimscore-packages/icscf/icscf.tar'
             # '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
@@ -34,7 +35,8 @@ class MyTestCase(unittest.TestCase):
                   username=self.nfvo_username,
                   password=self.nfvo_password,
                   nfvo_ip=self.nfvo_ip,
-                  nfvo_port=self.nfvo_port)
+                  nfvo_port=self.nfvo_port,
+                  format = self.nfvo_format)
         # self.assertEqual(True, False)
 
     def test_ob_client(self):
