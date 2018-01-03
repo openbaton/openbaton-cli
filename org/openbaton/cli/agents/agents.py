@@ -158,7 +158,7 @@ class VNFCInstanceAgent(BaseAgent):
         return self._client.delete(
             "%s/%s/vnfrecords/%s/vdunits/%s/vnfcinstances/%s" % (self.url, nsr_id, vnfr_id, vdu_id, vnfci_id))
 
-    def create(self, entity, nsr_id, vnfr_id, vdu_id="", standby=False, ):
+    def create(self, entity, nsr_id, vnfr_id, vdu_id="", standby=False):
         entity = entity.strip()
         if entity.endswith("}") or entity.endswith("]"):
             try:
