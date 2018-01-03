@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
     def test_cli(self):
         # if True:
         #     return
-        agent_choice = 'vnfpackage'
+        agent_choice = 'vim'
         action = 'list'
         params = [
                   '/opt/openbaton/openimscore-packages/icscf/icscf.tar'
