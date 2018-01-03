@@ -20,7 +20,6 @@ setup(
     scripts=["openbaton"],
     install_requires=[
         'requests',
-        'texttable',
         'tabulate',
         'configparser',
     ],

@@ -10,7 +10,6 @@ import os
 import sys
 
 import tabulate
-import texttable
 from requests import ConnectionError
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
@@ -136,31 +135,22 @@ def _exec_action(factory, agent_choice, action, project_id, params):
             else:
                 print("Show takes one argument, the id")
                 exit(1)
-            table = texttable.Texttable()
-            table.set_cols_align(["l", "r"])
-            table.set_cols_valign(["c", "b"])
-            table.set_cols_dtype(['t', 't'])
             params = _handle_params(agent_choice, action, params)
-            table.add_rows(
-                get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
-                                   agent_choice))
+            table = tabulate.tabulate(get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
+                                   agent_choice), headers="firstrow", tablefmt="grid")
             print(" ")
-            print(table.draw() + "\n")
+            print(table)
             print(" ")
         if action == "create":
             if len(params) <= 0:
                 print("create takes one argument, the object to create")
                 exit(1)
-            table = texttable.Texttable()
-            table.set_cols_align(["l", "r"])
-            table.set_cols_valign(["c", "b"])
-            table.set_cols_dtype(['t', 't'])
             params = _handle_params(agent_choice, action, params)
-            table.add_rows(
-                get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
-                                   agent_choice))
-            print("\n")
-            print(table.draw() + "\n\n")
+            table = tabulate.tabulate(get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
+                                   agent_choice), headers="firstrow", tablefmt="grid")
+            print(" ")
+            print(table)
+            print(" ")
     except WrongCredential as e:
         print("")
         print("ERROR: %s" % e.message)
