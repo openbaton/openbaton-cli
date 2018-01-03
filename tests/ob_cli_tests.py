@@ -22,14 +22,15 @@ class MyTestCase(unittest.TestCase):
         super(MyTestCase, self).__init__(methodName)
 
     def test_cli(self):
-        if True:
-            return
-        agent_choice = 'vnfci'
+        # if True:
+        #     return
+        agent_choice = 'vnfpackage'
         action = 'create'
         params = [
-            '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
-            '69b73f73-745e-4138-ad35-320d26127c9a',
-            'c1434dcb-2ab2-4138-bc21-308d225c9f9d',
+                  '/opt/openbaton/openimscore-packages/icscf/icscf.tar'
+            # '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
+            # '69b73f73-745e-4138-ad35-320d26127c9a',
+            # 'c1434dcb-2ab2-4138-bc21-308d225c9f9d',
         ]
         openbaton(agent_choice=agent_choice,
                   action=action,
