@@ -8,7 +8,7 @@ from org.openbaton.sdk.client import OBClient
 class MyTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         config = ConfigParser.ConfigParser()
-        config.read('./nfvo.properties.ini')
+        config.read('tests/nfvo.properties.ini')
         self.nfvo_ip = config.get('nfvo', 'nfvo_ip')
         self.nfvo_port = config.get('nfvo', 'nfvo_port')
         self.nfvo_username = config.get('nfvo', 'nfvo_username')
@@ -17,14 +17,15 @@ class MyTestCase(unittest.TestCase):
         super(MyTestCase, self).__init__(methodName)
 
     def test_cli(self):
-        if True:
-            return
-        agent_choice = 'vnfci'
+        # if True:
+        #     return
+        agent_choice = 'vnfpackage'
         action = 'create'
         params = [
-            '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
-            '69b73f73-745e-4138-ad35-320d26127c9a',
-            'c1434dcb-2ab2-4138-bc21-308d225c9f9d',
+                  '/opt/openbaton/openimscore-packages/icscf/icscf.tar'
+            # '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
+            # '69b73f73-745e-4138-ad35-320d26127c9a',
+            # 'c1434dcb-2ab2-4138-bc21-308d225c9f9d',
         ]
         openbaton(agent_choice=agent_choice,
                   action=action,
