@@ -17,6 +17,8 @@ from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, Nf
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
+PRINT_FORMATS = ["table", "json"]
+
 ACTIONS = ["list", "show", "delete", "create"]
 
 LIST_PRINT_KEY = {
@@ -103,7 +105,7 @@ def _handle_params(agent_choice, action, params):
     return params
 
 
-def _exec_action(factory, agent_choice, action, project_id, params):
+def _exec_action(factory, agent_choice, action, project_id, params, format):
     try:
         if action not in ACTIONS:
             print("Action %s unknown" % action)
@@ -116,11 +118,17 @@ def _exec_action(factory, agent_choice, action, project_id, params):
             exit(1)
         if action == "list":
             ag = factory.get_agent(agent_choice, project_id=project_id)
-            tabulate_tabulate = tabulate.tabulate(get_result_as_list_find_all(ag.find(), agent_choice),
-                                                  headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
-            print(" ")
-            print(tabulate_tabulate)
-            print(" ")
+            result = get_result_as_list_find_all(ag.find(), agent_choice)
+            if format == "table":
+                tabulate_tabulate = tabulate.tabulate(result, headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
+                print(" ")
+                print(tabulate_tabulate)
+                print(" ")
+            elif format == "json":
+                print(" ")
+                for elem in result:
+                    print(elem)
+                print(" ")
         if action == "delete":
             params = _handle_params(agent_choice, action, params)
             if len(params) <= 0:
@@ -136,21 +144,33 @@ def _exec_action(factory, agent_choice, action, project_id, params):
                 print("Show takes one argument, the id")
                 exit(1)
             params = _handle_params(agent_choice, action, params)
-            table = tabulate.tabulate(get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
-                                   agent_choice), headers="firstrow", tablefmt="grid")
-            print(" ")
-            print(table)
-            print(" ")
+            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
+                                   agent_choice, format)
+            if format == "table":
+                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
+                print(" ")
+                print(table)
+                print(" ")
+            elif format == "json":
+                print(" ")
+                print(json.dumps(result, indent = 4))
+                print(" ")
         if action == "create":
             if len(params) <= 0:
                 print("create takes one argument, the object to create")
                 exit(1)
             params = _handle_params(agent_choice, action, params)
-            table = tabulate.tabulate(get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
-                                   agent_choice), headers="firstrow", tablefmt="grid")
-            print(" ")
-            print(table)
-            print(" ")
+            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
+                                   agent_choice, format)
+            if format == "table":
+                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
+                print(" ")
+                print(table)
+                print(" ")
+            elif format == "json":
+                print(" ")
+                print(json.dumps(result, indent = 4))
+                print(" ")
     except WrongCredential as e:
         print("")
         print("ERROR: %s" % e.message)
@@ -173,7 +193,7 @@ def _exec_action(factory, agent_choice, action, project_id, params):
         print("")
 
 
-def get_result_to_show(obj, agent_choice):
+def get_result_to_show(obj, agent_choice, format):
     if isinstance(obj, str) or type(obj) == unicode:
         if not obj:
             exit(0)
@@ -187,26 +207,29 @@ def get_result_to_show(obj, agent_choice):
             print(item)
         exit(0)
     elif isinstance(obj, dict):
-        result = [["key", "value"]]
-        for k, v in obj.items():
-            if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
-                if isinstance(v, list):
-                    if len(v) > 0:
-                        tmp = []
-                        if isinstance(v[0], dict):
-                            tmp.append(" value: \n")
-                            tmp.extend(["- " + (x.get('ip') or x.get("id")) for x in v])
-                        result.append([k, "\n".join(tmp)])
-                else:
-                    if isinstance(v, dict):
-                        idName = v.get("name")
-                        if idName is None:
-                            idName = v.get("id")
-                        result.append([k, idName])
+        if format == 'table':
+            result = [["key", "value"]]
+            for k, v in obj.items():
+                if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
+                    if isinstance(v, list):
+                        if len(v) > 0:
+                            tmp = []
+                            if isinstance(v[0], dict):
+                                tmp.append(" value: \n")
+                                tmp.extend(["- " + (x.get('ip') or x.get("id")) for x in v])
+                            result.append([k, "\n".join(tmp)])
                     else:
-                        result.append([k, v])
+                        if isinstance(v, dict):
+                            idName = v.get("name")
+                            if idName is None:
+                                idName = v.get("id")
+                            result.append([k, idName])
+                        else:
+                            result.append([k, v])
 
-        return result
+            return result
+        elif format == 'json':
+            return obj
 
 
 def get_result_as_list_find_all(start_list, agent):
@@ -219,7 +242,7 @@ def get_result_as_list_find_all(start_list, agent):
     return res
 
 
-def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port, https=False):
+def openbaton(agent_choice, action, params, project_id, username, password, nfvo_ip, nfvo_port, format, https=False):
     factory = OpenBatonAgentFactory(nfvo_ip=nfvo_ip,
                                     nfvo_port=nfvo_port,
                                     https=https,
@@ -228,7 +251,7 @@ def openbaton(agent_choice, action, params, project_id, username, password, nfvo
                                     password=password,
                                     project_id=project_id)
 
-    _exec_action(factory, agent_choice, action, project_id, params)
+    _exec_action(factory, agent_choice, action, project_id, params, format)
 
 
 def start():
@@ -240,7 +263,7 @@ def start():
     parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip")
     parser.add_argument("--nfvo-port", help="the openbaton nfvo port")
     parser.add_argument("-s", "--ssl", help="use HTTPS instead of HTTP", action="store_true")
-
+    parser.add_argument("--format", help="json or table", choices=PRINT_FORMATS)
     parser.add_argument("agent",
                         help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
                         choices=SHOW_EXCLUDE_KEY.keys())
@@ -280,6 +303,7 @@ def start():
     if args.project_id is not None:
         project_id = args.project_id
     ssl_enabled = args.ssl
+    format = args.format
 
     if project_id is None:
         if sys.version_info[0] < 3:
@@ -303,11 +327,17 @@ def start():
             nfvo_port = raw_input("insert nfvo_port: ")
         else:
             nfvo_port = input("insert nfvo_port: ")
+    if format is None or format == "":
+        if sys.version_info[0] < 3:
+            format = raw_input("insert format: ")
+        else:
+            format = input("insert format: ")
 
     logger.debug("username '%s'" % username)
     logger.debug("project_id '%s'" % project_id)
     logger.debug("nfvo_ip '%s'" % nfvo_ip)
     logger.debug("nfvo_port '%s'" % nfvo_port)
+    logger.debug("format  '%s'" % format)
 
     if nfvo_port is None or nfvo_port == "":
         print("")
@@ -331,7 +361,7 @@ def start():
         logger.warning("The project id is missing. Run openbaton project list for choosing a project id")
 
     openbaton(args.agent, args.action, params=args.params, project_id=project_id, username=username, password=password,
-              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port, https=ssl_enabled)
+              nfvo_ip=nfvo_ip, nfvo_port=nfvo_port, https=ssl_enabled, format=format)
 
 
 if __name__ == '__main__':
