@@ -11,7 +11,7 @@ import sys
 
 import tabulate
 from requests import ConnectionError
-
+import argcomplete
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException, NotFoundException
 
@@ -118,7 +118,7 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
             exit(1)
         if action == "list":
             ag = factory.get_agent(agent_choice, project_id=project_id)
-            result = get_result_as_list_find_all(ag.find(), agent_choice)
+            result = get_result_as_list_find_all(ag.find(), agent_choice, format)
             if format == "table":
                 tabulate_tabulate = tabulate.tabulate(result, headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
                 print(" ")
@@ -127,7 +127,7 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
             elif format == "json":
                 print(" ")
                 for elem in result:
-                    print(elem)
+                    print(json.dumps(elem, indent = 4))
                 print(" ")
         if action == "delete":
             params = _handle_params(agent_choice, action, params)
@@ -232,13 +232,20 @@ def get_result_to_show(obj, agent_choice, format):
             return obj
 
 
-def get_result_as_list_find_all(start_list, agent):
+def get_result_as_list_find_all(start_list, agent, format):
     res = []
     for x in json.loads(start_list):
         tmp = []
+        dict = {}
         for key in LIST_PRINT_KEY.get(agent):
-            tmp.append(x.get(key))
-        res.append(tmp)
+            if format == "table":
+                tmp.append(x.get(key))
+            elif format == "json":
+                dict[key]=x.get(key)
+        if format == "table":
+            res.append(tmp)
+        elif format == "json":
+            res.append(dict)
     return res
 
 
@@ -263,15 +270,15 @@ def start():
     parser.add_argument("-ip", "--nfvo-ip", help="the openbaton nfvo ip")
     parser.add_argument("--nfvo-port", help="the openbaton nfvo port")
     parser.add_argument("-s", "--ssl", help="use HTTPS instead of HTTP", action="store_true")
-    parser.add_argument("--format", help="json or table", choices=PRINT_FORMATS)
-    parser.add_argument("agent",
+    parser.add_argument("--format", default="table", help="json or table", choices=PRINT_FORMATS)
+    parser.add_argument("-agent", metavar="AGENT",
                         help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
                         choices=SHOW_EXCLUDE_KEY.keys())
-    parser.add_argument("action",
+    parser.add_argument("-action", metavar="ACTION",
                         help="the action you want to call. Possibilities are: \n" + str(ACTIONS),
                         choices=ACTIONS)
     parser.add_argument("params", help="The id, file or json", nargs='*')
-
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.debug:
