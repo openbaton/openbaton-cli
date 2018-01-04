@@ -292,10 +292,10 @@ def start():
     parser.add_argument("--nfvo-port", help="the openbaton nfvo port")
     parser.add_argument("-s", "--ssl", help="use HTTPS instead of HTTP", action="store_true")
     parser.add_argument("--format", default="table", help="json or table", choices=PRINT_FORMATS)
-    parser.add_argument("-agent", metavar="AGENT",
+    parser.add_argument("agent", metavar="AGENT",
                         help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
                         choices=SHOW_EXCLUDE_KEY.keys())
-    parser.add_argument("-action", metavar="ACTION",
+    parser.add_argument("action", metavar="ACTION",
                         help="the action you want to call. Possibilities are: \n" + str(ACTIONS),
                         choices=ACTIONS)
     parser.add_argument("params", help="The id, file or json", nargs='*')
