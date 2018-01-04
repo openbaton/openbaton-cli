@@ -114,6 +114,22 @@ class RestClient(object):
         self.check_answer(response)
         return response.text
 
+    def put_file(self, url, body, headers=None):
+        if self.token is None:
+            self.token = self._get_token()
+        if headers is None:
+            headers = {"content-type": "text/plain"}
+        if self.project_id is not None:
+            headers["project-id"] = self.project_id
+        headers["Authorization"] = "Bearer %s" % self.token
+        logger.debug("executing PUT on url %s, with headers: %s" % (self.ob_url + url, headers))
+        response = requests.put(self.ob_url + url, data=body, headers=headers, verify=False)
+        if _expired_token(response.text):
+            self.token = self._get_token()
+            self.put(url, body=body, headers=headers)
+        self.check_answer(response)
+        return response.text
+
     def delete(self, url):
         if self.token is None:
             self.token = self._get_token()

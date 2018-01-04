@@ -17,9 +17,7 @@ from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, Nf
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
-PRINT_FORMATS = ["table", "json"]
-
-ACTIONS = ["list", "show", "delete", "create"]
+PRINT_FORMATS = ["table", "json"]ACTIONS = ["list", "show", "delete", "create", "update"]
 
 LIST_PRINT_KEY = {
     "nsd": ["id", "name", "vendor", "version"],
@@ -35,10 +33,12 @@ LIST_PRINT_KEY = {
     "csarvnfd": ["id", "name"],
     "key": ["id", "name", "fingerprint"],
     "log": ["id"],
-    "vdu": ["id", "name"],
+    "vdu": ["id", "name"],     # vdu-nsr
     "user": ["id", "username", "email"],
     "market": ["id", "name", "vendor", "version"],
     "service": ["id", "name"],
+    "script": ["id"],
+    "vdu-nsd":[]
 }
 
 SHOW_EXCLUDE_KEY = {
@@ -55,10 +55,12 @@ SHOW_EXCLUDE_KEY = {
     "market": [],
     "key": [],
     "log": [],
-    "vdu": [],
+    "vdu": [],  # vdu-nsr
     "vnfci": [],
     "user": ["password"],
     "service": [],
+    "script":[],
+    "vdu-nsd":[]
 }
 
 UNSUPPORTED_ACTIONS = {
@@ -70,7 +72,7 @@ UNSUPPORTED_ACTIONS = {
     "project": [],
     "event": [],
     "vnfci": ["list"],
-    "vdu": ["list", "create", "delete"],
+    "vdu": ["list", "create", "delete"],  #vdu-nsr
     "vnfpackage": [],
     "csarnsd": ["list", "show", "delete"],
     "csarvnfd": ["list", "show", "delete"],
@@ -79,6 +81,8 @@ UNSUPPORTED_ACTIONS = {
     "log": ["list", "delete", "create"],
     "user": [],
     "service": ["show"],
+    "script":["list","create","delete"],
+    "vdu-nsd":[]
 }
 
 
@@ -144,7 +148,7 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
                 print("Show takes one argument, the id")
                 exit(1)
             params = _handle_params(agent_choice, action, params)
-            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
+            result = get_result_to_show(json.loads(factory.get_agent(agent_choice, project_id=project_id).find(*params)),
                                    agent_choice, format)
             if format == "table":
                 table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
@@ -161,6 +165,24 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
                 exit(1)
             params = _handle_params(agent_choice, action, params)
             result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
+                                   agent_choice, format)
+            if format == "table":
+                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
+                print(" ")
+                print(table)
+                print(" ")
+            elif format == "json":
+                print(" ")
+                print(json.dumps(result, indent = 4))
+                print(" ")
+        if action == "update":
+            if len(params) >= 2:
+                _id = params[0]
+                update_values = params[1:]
+            else:
+                print("update takes at least 2 arguments, the object id to update and the fields to update")
+                exit(1)
+            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).update(_id, update_values),
                                    agent_choice, format)
             if format == "table":
                 table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
@@ -194,7 +216,7 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
 
 
 def get_result_to_show(obj, agent_choice, format):
-    if isinstance(obj, str) or type(obj) == unicode:
+    if isinstance(obj, str):
         if not obj:
             exit(0)
         try:

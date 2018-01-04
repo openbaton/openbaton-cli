@@ -1,4 +1,9 @@
-import ConfigParser
+try:
+   import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+
 import unittest
 
 from org.openbaton.cli.openbaton import openbaton
@@ -23,7 +28,6 @@ class MyTestCase(unittest.TestCase):
         agent_choice = 'vim'
         action = 'list'
         params = [
-                  '/opt/openbaton/openimscore-packages/icscf/icscf.tar'
             # '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
             # '69b73f73-745e-4138-ad35-320d26127c9a',
             # 'c1434dcb-2ab2-4138-bc21-308d225c9f9d',

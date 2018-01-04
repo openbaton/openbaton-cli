@@ -7,6 +7,9 @@ from org.openbaton.cli.errors.errors import WrongParameters, NotFoundException, 
 from org.openbaton.cli.utils.RestClient import RestClient
 
 
+WRONG_UPDATE_TYPES = [dict, list]
+
+
 def _get_parents_obj_id_from_id(id_to_find, main_agent, first_level, second_level=None, third_level=None):
     for obj in json.loads(main_agent.find()):
         for sub_obj in obj.get(first_level):
@@ -26,6 +29,58 @@ def _get_parents_obj_id_from_id(id_to_find, main_agent, first_level, second_leve
     raise NotFoundException('No {} found with ID {}'.format(first_level, id_to_find))
 
 
+def _cast(correct_type, new_entity):
+    if correct_type == bool:
+
+        true_ = new_entity.lower() == 'true'
+        false_ = new_entity.lower() == 'false'
+        if true_:
+            return true_
+        if false_:
+            return not false_
+        else:
+            raise SdkException("Boolean value can only be 'true' or 'false'")
+    else:
+        return correct_type(new_entity)
+
+def _formatUpdateValue(entity):
+    # entitiy can be either a json or a str like key=value,key2=value2 or a list like key=value key=value
+    new_entity = {}
+    if len(entity) == 1:
+        entity = entity[0]
+        if entity.endswith("}") or entity.endswith("]"):
+            new_entity = json.loads(entity)
+        else:  # for a single key = value
+            new_entity = {entity.split("=")[0]: entity.split("=")[1]}
+    else:  # sure key=vale key1=value1
+        for val in entity:
+            new_entity[val.split("=")[0]] = (val.split("=")[1])
+    return new_entity
+
+
+def _updateEntity(old_value, entity):
+    try:
+        new_entity = _formatUpdateValue(entity)
+    except:
+        raise SdkException('The passed JSON seems to be invalid.')
+
+    for k, v in new_entity.items():
+        if k in old_value:
+            if type(old_value[k]) in WRONG_UPDATE_TYPES:
+                raise SdkException('Cannot update a sub object, execute update directly to that entity')
+
+            if isinstance(old_value[k], type(new_entity[k])):
+                old_value[k] = new_entity[k]
+            else:
+                correct_type = type(old_value[k])
+                new_entity[k] = _cast(correct_type, new_entity[k])
+                old_value[k] = new_entity[k]
+        else:
+            raise SdkException('Key does not exist for the entity.')
+    return old_value
+
+
+
 class BaseAgent(object):
     def __init__(self, client, url, project_id=None):
         self._client = client
@@ -40,22 +95,9 @@ class BaseAgent(object):
         self._client.delete(self.url + "/%s" % _id)
 
     def update(self, _id, entity):
-        entity = entity.strip()
-        if entity.endswith("}") or entity.endswith("]"):
-            try:
-                entity_json = json.loads(entity)
-            except:
-                raise SdkException('The passed JSON seems to be invalid.')
-            return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity_json)))
-        else:
-            if not os.path.isfile(entity):
-                raise WrongParameters("{} is not a file".format(entity))
-            with open(entity) as f:
-                try:
-                    entity_json = f.read().replace('\n', '')
-                except:
-                    raise SdkException('The passed JSON seems to be invalid.')
-                return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(entity_json)))
+        old_value = json.loads(self._client.get(self.url + "/%s" % _id))
+        old_value = _updateEntity(old_value,entity)
+        return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(old_value)))
 
     def create(self, entity='{}', _id=""):
         entity = entity.strip()
@@ -269,7 +311,6 @@ class VNFPackageAgent(BaseAgent):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".tar"):
             return json.loads(self._client.post_file(self.url + "/%s" % _id, open(entity, "rb")))
 
-
 class CSARNSDAgent(BaseAgent):
     def __init__(self, client, project_id):
         super(CSARNSDAgent, self).__init__(client, "csar-nsd", project_id=project_id)
@@ -343,6 +384,30 @@ class SubAgent(BaseAgent):
         return super(SubAgent, self).create(entity, _id + "/" + self.sub_url + "/")
 
 
+class ScriptAgent(SubAgent):
+    def __init__(self,client, project_id,main_agent):
+        super(ScriptAgent,self).__init__(client=client,
+                                         project_id=project_id,
+                                         main_agent=main_agent,
+                                         sub_url="scripts",
+                                         sub_obj="scripts")
+
+    def update(self, _id, entity):
+        file_path = entity[0]
+        vnfpackage_id, script = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            with open(file_path) as f:
+                file_content = json.dumps(f.read().replace('\n', ''))
+                try:
+                    entity_json = json.loads(file_content)
+                except:
+                    raise SdkException('The passed JSON seems to be invalid.')
+            response = self._client.put_file("{}/{}/{}/{}".format(self.url,vnfpackage_id,self.sub_url,_id), entity_json)
+            script['payload'] = json.dumps(response)
+            return script
+        else:
+            raise WrongParameters("{} is not a file".format(file_path))
+
 class VNFRAgent(SubAgent):
     def __init__(self, client, project_id, main_agent):
         super(VNFRAgent, self).__init__(client=client,
@@ -354,18 +419,37 @@ class VNFRAgent(SubAgent):
 
 class VDUAgent(SubAgent):
     def __init__(self, client, project_id, main_agent):
-        super(VDUAgent, self).__init__(client=client,
-                                       project_id=project_id,
-                                       main_agent=main_agent,
-                                       sub_url='vnfrecords',
-                                       sub_obj="vnfr")
+        if main_agent.url == "ns-records":
+            super(VDUAgent, self).__init__(client=client,
+                                           project_id=project_id,
+                                           main_agent=main_agent,
+                                           sub_url='vnfrecords',
+                                           sub_obj="vnfr")
+        else:   # main_agent == "ns-descriptors"
+            super(VDUAgent, self).__init__(client=client,
+                                           project_id=project_id,
+                                           main_agent=main_agent,
+                                           sub_url='vnfdescriptors',
+                                           sub_obj="vnfd")
 
     def find(self, _id=""):
         if _id is None or _id == "":
             raise WrongParameters("Please provide the id, only action show is allowed on this agent")
-        nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+        if self._main_agent.url == "ns-records":
+            nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+        else:     # self._main_agent == "ns-descriptors"
+            nsd_id, vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
         return vdu
 
+    def update(self, _id, entity):
+        if self._main_agent.url == "ns-records":
+            nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+            url = self.url + "/" + nsr_id + "/" + self.sub_url + "/" + vnfr_id + "/" + "vdus/" + _id
+        else:    # self._main_agent == "ns-descriptors"
+            nsd_id, vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
+            url = self.url + "/" + nsd_id + "/" + self.sub_url + "/" + vnfd_id + "/" + "vdus/" + _id
+        old_value = _updateEntity(vdu,entity)
+        return json.loads(self._client.put(url, json.dumps(old_value)))
 
 class OpenBatonAgentFactory(object):
     def __init__(self, nfvo_ip="localhost", nfvo_port="8080", https=False, version=1, username=None, password=None,
@@ -403,6 +487,7 @@ class OpenBatonAgentFactory(object):
         self._vnfci_agent = None
         self._vdu_agent = None
         self._service_agent = None
+        self._script_agent = None
 
     def get_project_agent(self):
         if self._project_agent is None:
@@ -494,10 +579,14 @@ class OpenBatonAgentFactory(object):
         self._vnfci_agent.project_id = project_id
         return self._vnfci_agent
 
-    def get_vdu_agnet(self, project_id):
+    def get_vdu_agnet(self, project_id, parent):
         if self._vdu_agent is None:
-            self._vdu_agent = VDUAgent(self._client, project_id=project_id,
-                                       main_agent=self.get_ns_records_agent(project_id))
+            if parent == "nsr":
+                self._vdu_agent = VDUAgent(self._client, project_id=project_id,
+                                           main_agent=self.get_ns_records_agent(project_id))
+            else:    # if parent == "nsd"
+                self._vdu_agent = VDUAgent(self._client, project_id=project_id,
+                                           main_agent=self.get_ns_descriptor_agent(project_id))
         self._vdu_agent.project_id = project_id
         return self._vdu_agent
 
@@ -505,6 +594,13 @@ class OpenBatonAgentFactory(object):
         if self._service_agent is None:
             self._service_agent = ServiceAgent(self._client, project_id=project_id)
         return self._service_agent
+
+    def get_script_agent(self, project_id):
+        if self._script_agent is None:
+            self._script_agent = ScriptAgent(self._client,project_id=project_id,
+                                             main_agent=self.get_vnf_package_agent(project_id))
+            self._script_agent.project_id = project_id
+            return self._script_agent
 
     def get_agent(self, agent, project_id):
         if agent == "nsr":
@@ -537,9 +633,12 @@ class OpenBatonAgentFactory(object):
             return self.get_log_agent(project_id)
         if agent == 'vnfci':
             return self.get_vnfci_agnet(project_id)
-        if agent == 'vdu':
-            return self.get_vdu_agnet(project_id)
+        if "-" in agent and agent.split("-")[0] == 'vdu':  # vdu-nsd
+                return self.get_vdu_agnet(project_id,agent.split("-")[1])
+        if agent == "vdu":                      # vdu-nsr
+            return self.get_vdu_agnet(project_id, "nsr")
         if agent == "service":
             return self.get_service_agent(project_id)
-
+        if agent == "script":
+            return self.get_script_agent(project_id)
         raise WrongParameters('Agent %s not found' % agent)
