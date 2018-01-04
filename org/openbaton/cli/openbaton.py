@@ -17,8 +17,7 @@ from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, Nf
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
-PRINT_FORMATS = ["table", "json"]
-ACTIONS = ["list", "show", "delete", "create", "update"]
+PRINT_FORMATS = ["table", "json"]ACTIONS = ["list", "show", "delete", "create", "update"]
 
 LIST_PRINT_KEY = {
     "nsd": ["id", "name", "vendor", "version"],
