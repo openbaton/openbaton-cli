@@ -21,6 +21,7 @@ setup(
     install_requires=[
         'requests',
         'tabulate',
+        'argcomplete',
         'configparser',
     ],
     long_description=read('README.rst'),
