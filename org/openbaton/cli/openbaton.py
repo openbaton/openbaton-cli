@@ -150,7 +150,7 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
                 print("Show takes one argument, the id")
                 exit(1)
             params = _handle_params(agent_choice, action, params)
-            result = get_result_to_show(json.loads(factory.get_agent(agent_choice, project_id=project_id).find(*params)),
+            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
                                    agent_choice, format)
             if format == "table":
                 table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")

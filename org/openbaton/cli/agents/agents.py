@@ -439,7 +439,7 @@ class VDUAgent(SubAgent):
             nsr_id, vnfr_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
         else:     # self._main_agent == "ns-descriptors"
             nsd_id, vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
-        return vdu
+        return json.dumps(vdu)
 
     def update(self, _id, entity):
         if self._main_agent.url == "ns-records":

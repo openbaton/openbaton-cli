@@ -10,6 +10,7 @@ This section covers the requirements that must be met by the
 python-vnfm-sdk in order to satisfy the demands for such a component:
 
 -  python 2.7
+-  python 3.5
 
 How to install the Open Baton CLI
 ---------------------------------
@@ -29,16 +30,17 @@ After installing the CLI you have a new command:
 
     ./openbaton -h                                                                                                                                                                                                                                                                                                                                                  2 ↵
     usage: openbaton [-h] [-pid PROJECT_ID] [-u USERNAME] [-p PASSWORD] [-d]
-                     [-ip NFVO_IP] [--nfvo-port NFVO_PORT] [-s]
+                     [-ip NFVO_IP] [--nfvo-port NFVO_PORT] [-s] [--format]
                      agent action [params [params ...]]
 
     positional arguments:
       agent                 the agent you want to use. Possibilities are: ['project', 'vnfci',
                             'vdu', 'log', 'vnfd', 'csarnsd', 'nsd', 'csarvnfd', 'vim', 'vnfr',
-                            'service', 'user', 'key', 'vnfpackage', 'nsr', 'event', 'market']
+                            'service', 'user', 'key', 'vnfpackage', 'nsr', 'event', 'market','vdu-nsd','script']
       action                the action you want to call. Possibilities are:
-                            ['list', 'show', 'delete', 'create']
+                            ['list', 'show', 'delete', 'create', 'update']
       params                The ID, file or JSON
+      format                the output format you want to use. Possibilities are: ['table', 'json']
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -54,6 +56,7 @@ After installing the CLI you have a new command:
       --nfvo-port NFVO_PORT
                             the openbaton nfvo port
       -s, --ssl             use HTTPS instead of HTTP
+      --format              the expected output format
 
 
 Where the agents are:
@@ -112,6 +115,15 @@ Where the agents are:
 | service    | Agent requesting |
 |            | Services         |
 +------------+------------------+
+| vdu        | Agent requesting |
+|            | Vdu (nsr)       |
++------------+------------------+
+| vdu-nsd    | Agent requesting |
+|            | Vdu (nsd)       |
++------------+------------------+
+| script     | Agent requesting |
+|            | VNFPackage Script|
++------------+------------------+
 
 And actions are:
 
@@ -130,6 +142,9 @@ And actions are:
 |            | object           |
 +------------+------------------+
 | delete     | delete the       |
+|            | specified object |
++------------+------------------+
+| update     | update the       |
 |            | specified object |
 +------------+------------------+
 
