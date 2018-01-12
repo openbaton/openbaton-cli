@@ -9,10 +9,13 @@ import logging.config
 import os
 import sys
 
+import argcomplete
 import tabulate
 from requests import ConnectionError
-import argcomplete
+
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
+from org.openbaton.cli.config import get_unsupported_action, get_list_key, get_agents, get_excluded_key, \
+    get_additional_action
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException, NotFoundException
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
@@ -20,72 +23,6 @@ logger = logging.getLogger("org.openbaton.cli.MainAgent")
 PRINT_FORMATS = ["table", "json"]
 
 ACTIONS = ["list", "show", "delete", "create", "update"]
-
-LIST_PRINT_KEY = {
-    "nsd": ["id", "name", "vendor", "version"],
-    "vnfd": ["id", "name", "vendor", "version"],
-    "nsr": ["id", "name", "status", "task", "vendor", "version", ],
-    "vnfr": ["id", "name", "vendor", "version", "status"],
-    "vim": ["id", "name", "authUrl", "tenant", "username"],
-    "project": ["id", "name", "description"],
-    "event": ["id", "name", "networkServiceId", "virtualNetworkFunctionId", "type", "endpoint"],
-    "vnfpackage": ["id", "name"],
-    "csarnsd": ["id", "name"],
-    "vnfci": ["id", "name"],
-    "csarvnfd": ["id", "name"],
-    "key": ["id", "name", "fingerprint"],
-    "log": ["id"],
-    "vdu": ["id", "name"],     # vdu-nsr
-    "user": ["id", "username", "email"],
-    "market": ["id", "name", "vendor", "version"],
-    "service": ["id", "name"],
-    "script": ["id"],
-    "vdu-nsd":[]
-}
-
-SHOW_EXCLUDE_KEY = {
-    "nsd": [],
-    "vnfd": [],
-    "nsr": [],
-    "vnfr": [],
-    "vim": ["password"],
-    "project": [],
-    "event": ["version"],
-    "vnfpackage": [],
-    "csarnsd": [],
-    "csarvnfd": [],
-    "market": [],
-    "key": [],
-    "log": [],
-    "vdu": [],  # vdu-nsr
-    "vnfci": [],
-    "user": ["password"],
-    "service": [],
-    "script":[],
-    "vdu-nsd":[]
-}
-
-UNSUPPORTED_ACTIONS = {
-    "nsd": [],
-    "vnfd": [],
-    "nsr": [],
-    "vnfr": [],
-    "vim": [],
-    "project": [],
-    "event": [],
-    "vnfci": ["list"],
-    "vdu": ["list", "create", "delete"],  #vdu-nsr
-    "vnfpackage": [],
-    "csarnsd": ["list", "show", "delete"],
-    "csarvnfd": ["list", "show", "delete"],
-    "market": ["list", "show", "delete"],
-    "key": [],
-    "log": ["list", "delete", "create"],
-    "user": [],
-    "service": ["show"],
-    "script":["list","create","delete"],
-    "vdu-nsd":[]
-}
 
 
 def _handle_params(agent_choice, action, params):
@@ -113,36 +50,37 @@ def _handle_params(agent_choice, action, params):
 
 def _exec_action(factory, agent_choice, action, project_id, params, format):
     try:
-        if action not in ACTIONS:
-            print("Action %s unknown" % action)
+        if action not in ACTIONS and action not in get_additional_action(agent_choice):
+            print("Action %s unknown for agent %s" % (action, agent_choice))
             exit(1)
-        if agent_choice not in LIST_PRINT_KEY.keys():
+        if agent_choice not in get_agents():
             print("agent %s unknown" % agent_choice)
             exit(1)
-        if action in UNSUPPORTED_ACTIONS.get(agent_choice):
+        if action in get_unsupported_action(agent_choice):
             print("{} agent does not support {} action".format(agent_choice, action))
             exit(1)
+
         if action == "list":
             ag = factory.get_agent(agent_choice, project_id=project_id)
             result = get_result_as_list_find_all(ag.find(), agent_choice, format)
             if format == "table":
-                tabulate_tabulate = tabulate.tabulate(result, headers=LIST_PRINT_KEY.get(agent_choice), tablefmt="grid")
+                tabulate_tabulate = tabulate.tabulate(result, headers=get_list_key(agent_choice), tablefmt="grid")
                 print(" ")
                 print(tabulate_tabulate)
                 print(" ")
             elif format == "json":
                 print(" ")
                 for elem in result:
-                    print(json.dumps(elem, indent = 4))
+                    print(json.dumps(elem, indent=4))
                 print(" ")
-        if action == "delete":
+        elif action == "delete":
             params = _handle_params(agent_choice, action, params)
             if len(params) <= 0:
                 print("Delete takes one argument, the id")
                 exit(1)
             factory.get_agent(agent_choice, project_id=project_id).delete(*params)
             print("Executed delete.")
-        if action == "show":
+        elif action == "show":
             if len(params) != 0:
                 if isinstance(params, str):
                     params = params.split()
@@ -151,50 +89,36 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
                 exit(1)
             params = _handle_params(agent_choice, action, params)
             result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).find(*params),
-                                   agent_choice, format)
-            if format == "table":
-                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
-                print(" ")
-                print(table)
-                print(" ")
-            elif format == "json":
-                print(" ")
-                print(json.dumps(result, indent = 4))
-                print(" ")
-        if action == "create":
+                                        agent_choice, format)
+            print_result(format, result)
+        elif action == "create":
             if len(params) <= 0:
                 print("create takes one argument, the object to create")
                 exit(1)
             params = _handle_params(agent_choice, action, params)
             result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).create(*params),
-                                   agent_choice, format)
-            if format == "table":
-                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
-                print(" ")
-                print(table)
-                print(" ")
-            elif format == "json":
-                print(" ")
-                print(json.dumps(result, indent = 4))
-                print(" ")
-        if action == "update":
+                                        agent_choice, format)
+            print_result(format, result)
+        elif action == "update":
             if len(params) >= 2:
                 _id = params[0]
                 update_values = params[1:]
             else:
                 print("update takes at least 2 arguments, the object id to update and the fields to update")
                 exit(1)
-            result = get_result_to_show(factory.get_agent(agent_choice, project_id=project_id).update(_id, update_values),
-                                   agent_choice, format)
-            if format == "table":
-                table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
-                print(" ")
-                print(table)
-                print(" ")
-            elif format == "json":
-                print(" ")
-                print(json.dumps(result, indent = 4))
-                print(" ")
+            result = get_result_to_show(
+                factory.get_agent(agent_choice, project_id=project_id).update(_id, update_values),
+                agent_choice, format)
+            print_result(format, result)
+        else:
+            # Action Additional
+            logger.debug("Specific Action: %s" % action)
+            result = get_result_to_show(
+                factory.get_agent(agent_choice, project_id=project_id).execute_action(action, *params),
+                agent_choice,
+                format)
+            print_result(format, result)
+
     except WrongCredential as e:
         print("")
         print("ERROR: %s" % e.message)
@@ -217,6 +141,18 @@ def _exec_action(factory, agent_choice, action, project_id, params, format):
         print("")
 
 
+def print_result(format, result):
+    if format == "table":
+        table = tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
+        print(" ")
+        print(table)
+        print(" ")
+    elif format == "json":
+        print(" ")
+        print(json.dumps(result, indent=4))
+        print(" ")
+
+
 def get_result_to_show(obj, agent_choice, format):
     if isinstance(obj, str):
         if not obj:
@@ -234,7 +170,7 @@ def get_result_to_show(obj, agent_choice, format):
         if format == 'table':
             result = [["key", "value"]]
             for k, v in obj.items():
-                if k not in SHOW_EXCLUDE_KEY.get(agent_choice):
+                if k not in get_excluded_key(agent_choice):
                     if isinstance(v, list):
                         if len(v) > 0:
                             tmp = []
@@ -256,19 +192,19 @@ def get_result_to_show(obj, agent_choice, format):
             return obj
 
 
-def get_result_as_list_find_all(start_list, agent, format):
+def get_result_as_list_find_all(start_list, agent, _format):
     res = []
     for x in json.loads(start_list):
         tmp = []
         dict = {}
-        for key in LIST_PRINT_KEY.get(agent):
-            if format == "table":
+        for key in get_list_key(agent_choice=agent):
+            if _format == "table":
                 tmp.append(x.get(key))
-            elif format == "json":
-                dict[key]=x.get(key)
-        if format == "table":
+            elif _format == "json":
+                dict[key] = x.get(key)
+        if _format == "table":
             res.append(tmp)
-        elif format == "json":
+        elif _format == "json":
             res.append(dict)
     return res
 
@@ -296,11 +232,9 @@ def start():
     parser.add_argument("-s", "--ssl", help="use HTTPS instead of HTTP", action="store_true")
     parser.add_argument("--format", default="table", help="json or table", choices=PRINT_FORMATS)
     parser.add_argument("agent", metavar="AGENT",
-                        help="the agent you want to use. Possibilities are: \n" + str(SHOW_EXCLUDE_KEY.keys()),
-                        choices=SHOW_EXCLUDE_KEY.keys())
+                        help="the agent you want to use. Possibilities are: \n" + str(get_agents()))
     parser.add_argument("action", metavar="ACTION",
-                        help="the action you want to call. Possibilities are: \n" + str(ACTIONS),
-                        choices=ACTIONS)
+                        help="the action you want to call. Possibilities are: \n" + str(ACTIONS))
     parser.add_argument("params", help="The id, file or json", nargs='*')
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -310,12 +244,6 @@ def start():
         print()
     else:
         logging.basicConfig(level=logging.WARNING)
-
-    project_id = None
-    username = None
-    password = None
-    nfvo_ip = None
-    nfvo_port = None
 
     project_id = os.environ.get('OB_PROJECT_ID')
     username = os.environ.get('OB_USERNAME')
