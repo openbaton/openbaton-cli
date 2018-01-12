@@ -15,14 +15,14 @@ from requests import ConnectionError
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
 from org.openbaton.cli.config import get_unsupported_action, get_list_key, get_agents, get_excluded_key, \
-    get_additional_action
+    get_additional_action, ACTIONS
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException, NotFoundException
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
 PRINT_FORMATS = ["table", "json"]
 
-ACTIONS = ["list", "show", "delete", "create", "update"]
+
 
 
 def _handle_params(agent_choice, action, params):

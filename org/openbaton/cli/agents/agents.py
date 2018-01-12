@@ -81,11 +81,13 @@ def _updateEntity(old_value, entity):
 
 
 class BaseAgent(object):
-    def __init__(self, client, url, project_id=None):
+    def __init__(self, client, url, agent_name, project_id=None):
         self._client = client
         self.url = url
         if project_id is not None:
             self._client.project_id = project_id
+        self._type = self.__class__.__name__
+        self.agent = agent_name
 
     def find(self, _id=""):
         return self._client.get(self.url + "/%s" % _id)
@@ -124,20 +126,29 @@ class BaseAgent(object):
             result = json.loads(result)
         return result
 
+    def help(self, *params):
+        return {
+            "list": "openbaton %s list:  show all entities" % self.agent,
+            "show": "openbaton %s show <id>: show details of selected id" % self.agent,
+            "create": "openbaton %s create <object>: creates an entity with passed vaule" % self.agent,
+            "update": "openbaton %s update <id> <key>=<value> [ .. <key>=<value> ]: updates an entity with passed values" % self.agent,
+            "help": "openbaton %s help: shows the agent %s help" % (self.agent, self.agent),
+        }
+
 
 class ProjectAgent(BaseAgent):
     def __init__(self, client):
-        super(ProjectAgent, self).__init__(client, "projects")
+        super(ProjectAgent, self).__init__(client, "projects", 'project')
 
 
 class EventAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(EventAgent, self).__init__(client, "events", project_id=project_id)
+        super(EventAgent, self).__init__(client, "events", 'event', project_id=project_id)
 
 
 class VimInstanceAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(VimInstanceAgent, self).__init__(client, "datacenters", project_id=project_id)
+        super(VimInstanceAgent, self).__init__(client, "datacenters", 'vim', project_id=project_id)
 
     def refresh(self, _id):
         return self._client.get(self.url + "/%s/refresh" % _id)
@@ -149,12 +160,12 @@ class NSRAgent(BaseAgent):
         return json.loads(self._client.post(self.url + "/%s" % entity, json.dumps(json.loads(_id))))
 
     def __init__(self, client, project_id):
-        super(NSRAgent, self).__init__(client, "ns-records", project_id=project_id)
+        super(NSRAgent, self).__init__(client, "ns-records", 'nsr', project_id=project_id)
 
 
 class VNFCInstanceAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(VNFCInstanceAgent, self).__init__(client, "ns-records", project_id=project_id)
+        super(VNFCInstanceAgent, self).__init__(client, "ns-records", 'vnfci', project_id=project_id)
 
     # {id}/vnfrecords/{idVnf}/vdunits/vnfcinstances
     def delete(self, nsr_id, vnfr_id, vdu_id="", vnfci_id=""):
@@ -220,17 +231,17 @@ class KeyAgent(BaseAgent):
         return key
 
     def __init__(self, client, project_id):
-        super(KeyAgent, self).__init__(client, "keys", project_id=project_id)
+        super(KeyAgent, self).__init__(client, "keys", 'key', project_id=project_id)
 
 
 class UserAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(UserAgent, self).__init__(client, "users", project_id=project_id)
+        super(UserAgent, self).__init__(client, "users", 'user', project_id=project_id)
 
 
 class ServiceAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(ServiceAgent, self).__init__(client, "components/services", project_id=project_id)
+        super(ServiceAgent, self).__init__(client, "components/services", 'ServiceCredentials', project_id=project_id)
 
     def create(self, entity='{}', _id=""):
         headers = {"content-type": "application/json", "accept": "application/octet-stream"}
@@ -274,7 +285,12 @@ class MarketAgent(BaseAgent):
         return json.loads(self._client.post(self.url, json.dumps(entity)))
 
     def __init__(self, client, project_id):
-        super(MarketAgent, self).__init__(client, "ns-descriptors/marketdownload", project_id=project_id)
+        super(MarketAgent, self).__init__(client, "ns-descriptors/marketdownload", 'market', project_id=project_id)
+
+    def help(self, *params):
+        return {
+            "create": "openbaton %s create <link>: create a nsd from maketplace link" % self.agent
+        }
 
 
 class LogAgent(BaseAgent):
@@ -298,17 +314,17 @@ class LogAgent(BaseAgent):
         raise WrongParameters('The log agent is only allowed to execute "show" passing: nsr_id, vnfr_name, hostname')
 
     def __init__(self, client, project_id):
-        super(LogAgent, self).__init__(client, "logs", project_id=project_id)
+        super(LogAgent, self).__init__(client, "logs", "log", project_id=project_id)
 
 
 class NSDAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(NSDAgent, self).__init__(client, "ns-descriptors", project_id=project_id)
+        super(NSDAgent, self).__init__(client, "ns-descriptors", "nsd", project_id=project_id)
 
 
 class VNFPackageAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(VNFPackageAgent, self).__init__(client, "vnf-packages", project_id=project_id)
+        super(VNFPackageAgent, self).__init__(client, "vnf-packages", "vnfpackage", project_id=project_id)
 
     def create(self, entity='', _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".tar"):
@@ -317,7 +333,7 @@ class VNFPackageAgent(BaseAgent):
 
 class CSARNSDAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(CSARNSDAgent, self).__init__(client, "csar-nsd", project_id=project_id)
+        super(CSARNSDAgent, self).__init__(client, "csar-nsd", "csarnsd", project_id=project_id)
 
     def create(self, entity='', _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".csar"):
@@ -337,7 +353,7 @@ class CSARNSDAgent(BaseAgent):
 
 class CSARVNFDAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(CSARVNFDAgent, self).__init__(client, "csar-vnfd", project_id=project_id)
+        super(CSARVNFDAgent, self).__init__(client, "csar-vnfd", "csarvfnd", project_id=project_id)
 
     def create(self, entity='', _id=""):
         if os.path.exists(entity) and os.path.isfile(entity) and entity.endswith(".csar"):
@@ -357,12 +373,12 @@ class CSARVNFDAgent(BaseAgent):
 
 class VNFDAgent(BaseAgent):
     def __init__(self, client, project_id):
-        super(VNFDAgent, self).__init__(client=client, url="vnf-descriptors", project_id=project_id)
+        super(VNFDAgent, self).__init__(client=client, url="vnf-descriptors", agent_name="vnfd", project_id=project_id)
 
 
 class SubAgent(BaseAgent):
-    def __init__(self, client, project_id, main_agent, sub_url, sub_obj):
-        super(SubAgent, self).__init__(client, main_agent.url, project_id=project_id)
+    def __init__(self, client, project_id, agent_name, main_agent, sub_url, sub_obj):
+        super(SubAgent, self).__init__(client, main_agent.url, agent_name, project_id=project_id)
         self.sub_obj = sub_obj
         self.sub_url = sub_url
         self._main_agent = main_agent
@@ -392,6 +408,7 @@ class ScriptAgent(SubAgent):
     def __init__(self, client, project_id, main_agent):
         super(ScriptAgent, self).__init__(client=client,
                                           project_id=project_id,
+                                          agent_name="script",
                                           main_agent=main_agent,
                                           sub_url="scripts",
                                           sub_obj="scripts")
@@ -419,6 +436,7 @@ class VNFRAgent(SubAgent):
         super(VNFRAgent, self).__init__(client=client,
                                         project_id=project_id,
                                         main_agent=main_agent,
+                                        agent_name="vnfr",
                                         sub_url='vnfrecords',
                                         sub_obj="vnfr")
 
@@ -430,12 +448,14 @@ class VDUAgent(SubAgent):
                                            project_id=project_id,
                                            main_agent=main_agent,
                                            sub_url='vnfrecords',
+                                           agent_name="vdu-vnfr",
                                            sub_obj="vnfr")
         else:  # main_agent == "ns-descriptors"
             super(VDUAgent, self).__init__(client=client,
                                            project_id=project_id,
                                            main_agent=main_agent,
                                            sub_url='vnfdescriptors',
+                                           agent_name="vdu",
                                            sub_obj="vnfd")
 
     def find(self, _id=""):

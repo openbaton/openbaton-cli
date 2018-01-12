@@ -26,7 +26,7 @@ class MyTestCase(unittest.TestCase):
         # if True:
         #     return
         agent_choice = 'vim'
-        action = 'list'
+        action = 'help'
         params = [
             # '{ "vnfComponent":{"connection_point":[{ "floatingIp":"random", "virtual_link_reference":"mgmt" }]}}',
             # '69b73f73-745e-4138-ad35-320d26127c9a',

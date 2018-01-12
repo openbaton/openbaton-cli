@@ -1,3 +1,5 @@
+ACTIONS = ["list", "show", "delete", "create", "update", "help"]
+
 AGENTS_ACTIONS = {
     "nsd": {
         "LIST_KEY": ["id", "name", "vendor", "version"],
