@@ -65,6 +65,15 @@ class OBClient(object):
         self.project_id = ob_project.get('id')
         return ob_project
 
+    def create_event(self, event):
+        for e in self.list_event():
+            if e.get('name') == e.get('name'):
+                return e
+        if isinstance(event, dict):
+            event = json.dumps(event)
+        ob_event = self.agent_factory.get_event_agent(self.project_id).create(event)
+        return ob_event
+
     def create_user(self, user):
 
         for us in json.loads(self.list_users()):
@@ -87,6 +96,9 @@ class OBClient(object):
 
     def list_users(self):
         return json.loads(self.agent_factory.get_user_agent(self.project_id).find())
+
+    def list_event(self):
+        return json.loads(self.agent_factory.get_event_agent(self.project_id).find())
 
     def list_projects(self):
         return json.loads(self.agent_factory.get_project_agent().find())
@@ -152,6 +164,9 @@ class OBClient(object):
 
     def delete_project(self, ob_project_id):
         self.agent_factory.get_project_agent().delete(ob_project_id)
+
+    def delete_event(self, ob_event_id):
+        self.agent_factory.get_event_agent(self.project_id).delete(ob_event_id)
 
     def list_nsrs(self):
         return json.loads(self.agent_factory.get_ns_records_agent(self.project_id).find())
