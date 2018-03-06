@@ -23,8 +23,6 @@ logger = logging.getLogger("org.openbaton.cli.MainAgent")
 PRINT_FORMATS = ["table", "json"]
 
 
-
-
 def _handle_params(agent_choice, action, params):
     if agent_choice == 'vnfci':
         if action == 'create':
