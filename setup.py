@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="openbaton-cli",
-    version="5.1.1",
+    version="5.2.0b",
     author="Open Baton",
     author_email="dev@openbaton.org",
     description="The Open Baton CLI",
@@ -17,12 +17,14 @@ setup(
     keywords="python vnfm nfvo open baton openbaton sdk cli rest",
     url="http://openbaton.github.io/",
     packages=find_packages(),
-    scripts=["openbaton"],
+    scripts=["openbaton", "openbaton-v2"],
     install_requires=[
         'requests',
         'tabulate',
         'argcomplete',
         'configparser',
+        'asyncio',
+        'cliff',
     ],
     long_description=read('README.rst'),
     classifiers=[
@@ -35,6 +37,16 @@ setup(
     entry_points={
         'console_scripts': [
             'openbaton = org.openbaton.cli.openbaton:start',
+        ],
+        'openbaton.cmd': [
+            'nsd = org.openbaton.v2.nsd:Nsd',
+            'nsr = org.openbaton.v2.nsr:Nsr',
+            'project = org.openbaton.v2.projects:Projects',
+            'vim = org.openbaton.v2.vims:Vims',
+            'event = org.openbaton.v2.events:Events',
+            'package = org.openbaton.v2.packages:VnfPackages',
+            'user = org.openbaton.v2.users:Users',
+            'service = org.openbaton.v2.services:Services',
         ]
     }
 )

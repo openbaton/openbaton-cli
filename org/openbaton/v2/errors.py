@@ -1,0 +1,2 @@
+class WrongActionError(Exception):
+    pass

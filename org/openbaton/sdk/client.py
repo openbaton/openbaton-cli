@@ -3,11 +3,11 @@ import logging
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
 from org.openbaton.cli.errors.errors import NfvoException
-from org.openbaton.sdk.utils import get_config, get_config_file_location
 
 
 class OBClient(object):
     def __init__(self, nfvo_ip=None, nfvo_port=None, username=None, password=None, https=False, project_name=None,
+                 project_id=None,
                  version=1):
         """
         If username, password, ip, port etc are passed, it will create a openbaton agent using these ones. if not it
@@ -28,15 +28,15 @@ class OBClient(object):
         self.nfvo_ip = nfvo_ip
         self.nfvo_port = nfvo_port
         self.version = version
-
+        self.project_id = None
         self.agent_factory = OpenBatonAgentFactory(nfvo_ip=self.nfvo_ip,
                                                    nfvo_port=self.nfvo_port,
                                                    https=self.https,
                                                    version=self.version,
                                                    username=self.username,
                                                    password=self.password,
-                                                   project_id=None)
-        if project_name:
+                                                   project_id=project_id)
+        if not project_id and project_name:
             self.project_id = self._get_project_id(project_name)
 
     def _get_project_id(self, project_name):
@@ -84,8 +84,18 @@ class OBClient(object):
             user = json.dumps(user)
         return json.loads(self.agent_factory.get_user_agent(self.project_id).create(user))
 
+    def create_service(self, service):
+
+        for srv in self.list_services():
+            if srv.get('name') == service.get('name'):
+                return srv
+
+        if isinstance(service, dict):
+            service = json.dumps(service)
+        return self.agent_factory.get_service_agent(self.project_id).create(service)
+
     def create_vim_instance(self, vim_instance):
-        for vi in self.list_vim_instances():
+        for vi in self.list_vims():
             if vi.get('name') == vim_instance.get('name'):
                 return vi
         if isinstance(vim_instance, dict):
@@ -100,13 +110,19 @@ class OBClient(object):
     def list_event(self):
         return json.loads(self.agent_factory.get_event_agent(self.project_id).find())
 
+    def list_services(self):
+        return json.loads(self.agent_factory.get_service_agent(self.project_id).find())
+
     def list_projects(self):
         return json.loads(self.agent_factory.get_project_agent().find())
 
-    def list_vim_instances(self):
+    def list_packages(self):
+        return json.loads(self.agent_factory.get_vnf_package_agent(self.project_id).find())
+
+    def list_vims(self):
         return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find())
 
-    def upload_package(self, package_path, name=None):
+    def create_package(self, package_path, name=None):
         package_agent = self.agent_factory.get_vnf_package_agent(self.project_id)
         try:
             return package_agent.create(package_path)
@@ -127,6 +143,9 @@ class OBClient(object):
     def get_nsd(self, nsd_id):
         return self.agent_factory.get_ns_descriptor_agent(self.project_id).find(nsd_id)
 
+    def get_package(self, package_id):
+        return self.agent_factory.get_vnf_package_agent(self.project_id).find(package_id)
+
     def delete_nsd(self, nsd_id):
         self.agent_factory.get_ns_descriptor_agent(self.project_id).delete(nsd_id)
 
@@ -135,6 +154,12 @@ class OBClient(object):
 
     def get_nsr(self, nsr_id):
         return self.agent_factory.get_ns_records_agent(self.project_id).find(nsr_id)
+
+    def get_service(self, service_id):
+        return self.agent_factory.get_service_agent(self.project_id).find(service_id)
+
+    def get_user(self, user_id):
+        return self.agent_factory.get_user_agent(self.project_id).find(user_id)
 
     def import_key(self, ssh_pub_key, name):
 
@@ -165,6 +190,9 @@ class OBClient(object):
     def delete_project(self, ob_project_id):
         self.agent_factory.get_project_agent().delete(ob_project_id)
 
+    def delete_service(self, service_id):
+        self.agent_factory.get_service_agent(self.project_id).delete(service_id)
+
     def delete_event(self, ob_event_id):
         self.agent_factory.get_event_agent(self.project_id).delete(ob_event_id)
 
@@ -173,3 +201,6 @@ class OBClient(object):
 
     def delete_vim_instance(self, _vim_id):
         self.agent_factory.get_vim_instance_agent(self.project_id).delete(_vim_id)
+
+    def delete_package(self, package_id):
+        self.agent_factory.get_vnf_package_agent(self.project_id).delete(package_id)

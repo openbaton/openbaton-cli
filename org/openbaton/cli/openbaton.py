@@ -14,9 +14,9 @@ import tabulate
 from requests import ConnectionError
 
 from org.openbaton.cli.agents.agents import OpenBatonAgentFactory
-from org.openbaton.cli.config import get_unsupported_action, get_list_key, get_agents, get_excluded_key, \
-    get_additional_action, ACTIONS
 from org.openbaton.cli.errors.errors import WrongCredential, WrongParameters, NfvoException, NotFoundException
+from org.openbaton.config import get_unsupported_action, get_list_key, get_agents, get_excluded_key, \
+    get_additional_action, ACTIONS
 
 logger = logging.getLogger("org.openbaton.cli.MainAgent")
 
@@ -178,10 +178,10 @@ def get_result_to_show(obj, agent_choice, format):
                             result.append([k, "\n".join(tmp)])
                     else:
                         if isinstance(v, dict):
-                            idName = v.get("name")
-                            if idName is None:
-                                idName = v.get("id")
-                            result.append([k, idName])
+                            id_name = v.get("name")
+                            if id_name is None:
+                                id_name = v.get("id")
+                            result.append([k, id_name])
                         else:
                             result.append([k, v])
 

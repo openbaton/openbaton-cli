@@ -43,7 +43,7 @@ def _cast(correct_type, new_entity):
         return correct_type(new_entity)
 
 
-def _formatUpdateValue(entity):
+def _format_update_value(entity):
     # entitiy can be either a json or a str like key=value,key2=value2 or a list like key=value key=value
     new_entity = {}
     if len(entity) == 1:
@@ -58,9 +58,9 @@ def _formatUpdateValue(entity):
     return new_entity
 
 
-def _updateEntity(old_value, entity):
+def _update_entity(old_value, entity):
     try:
-        new_entity = _formatUpdateValue(entity)
+        new_entity = _format_update_value(entity)
     except:
         raise SdkException('The passed JSON seems to be invalid.')
 
@@ -97,7 +97,7 @@ class BaseAgent(object):
 
     def update(self, _id, entity):
         old_value = json.loads(self._client.get(self.url + "/%s" % _id))
-        old_value = _updateEntity(old_value, entity)
+        old_value = _update_entity(old_value, entity)
         return json.loads(self._client.put(self.url + "/%s" % _id, json.dumps(old_value)))
 
     def create(self, entity='{}', _id=""):
@@ -474,7 +474,7 @@ class VDUAgent(SubAgent):
         else:  # self._main_agent == "ns-descriptors"
             nsd_id, vnfd_id, vdu = _get_parents_obj_id_from_id(_id, self._main_agent, self.sub_obj, 'vdu')
             url = self.url + "/" + nsd_id + "/" + self.sub_url + "/" + vnfd_id + "/" + "vdus/" + _id
-        old_value = _updateEntity(vdu, entity)
+        old_value = _update_entity(vdu, entity)
         return json.loads(self._client.put(url, json.dumps(old_value)))
 
 
