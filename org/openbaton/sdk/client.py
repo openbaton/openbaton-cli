@@ -39,6 +39,7 @@ class OBClient(object):
         if not project_id and project_name:
             self.project_id = self._get_project_id(project_name)
 
+    # UTILITIES
     def _get_project_id(self, project_name):
         project_agent = self.agent_factory.get_project_agent()
         for project in json.loads(project_agent.find()):
@@ -46,14 +47,43 @@ class OBClient(object):
                 return project.get('id')
         return None
 
+    ####################
+    ####### LIST #######
+    ####################
+
+    def list_users(self):
+        return json.loads(self.agent_factory.get_user_agent(self.project_id).find())
+
+    def list_keys(self):
+        return json.loads(self.agent_factory.get_key_agent(self.project_id).find())
+
+    def list_event(self):
+        return json.loads(self.agent_factory.get_event_agent(self.project_id).find())
+
+    def list_services(self):
+        return json.loads(self.agent_factory.get_service_agent(self.project_id).find())
+
+    def list_projects(self):
+        return json.loads(self.agent_factory.get_project_agent().find())
+
+    def list_packages(self):
+        return json.loads(self.agent_factory.get_vnf_package_agent(self.project_id).find())
+
+    def list_vims(self):
+        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find())
+
     def list_nsds(self):
         return json.loads(self.agent_factory.get_ns_descriptor_agent(self.project_id).find())
 
+    def list_nsrs(self):
+        return json.loads(self.agent_factory.get_ns_records_agent(self.project_id).find())
+
+    ####################
+    ###### CREATE ######
+    ####################
+
     def create_nsr(self, nsd_id, body=None):
         return self.agent_factory.get_ns_records_agent(self.project_id).create(nsd_id, body)
-
-    def delete_nsr(self, nsr_id):
-        return self.agent_factory.get_ns_records_agent(self.project_id).delete(nsr_id)
 
     def create_project(self, project):
         for p in json.loads(self.list_projects()):
@@ -104,27 +134,6 @@ class OBClient(object):
         logging.debug("Posting vim %s" % vim_instance)
         return self.agent_factory.get_vim_instance_agent(self.project_id).create(vim_instance)
 
-    def list_users(self):
-        return json.loads(self.agent_factory.get_user_agent(self.project_id).find())
-
-    def list_keys(self):
-        return json.loads(self.agent_factory.get_key_agent(self.project_id).find())
-
-    def list_event(self):
-        return json.loads(self.agent_factory.get_event_agent(self.project_id).find())
-
-    def list_services(self):
-        return json.loads(self.agent_factory.get_service_agent(self.project_id).find())
-
-    def list_projects(self):
-        return json.loads(self.agent_factory.get_project_agent().find())
-
-    def list_packages(self):
-        return json.loads(self.agent_factory.get_vnf_package_agent(self.project_id).find())
-
-    def list_vims(self):
-        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find())
-
     def create_package(self, package_path, name=None):
         package_agent = self.agent_factory.get_vnf_package_agent(self.project_id)
         try:
@@ -146,41 +155,7 @@ class OBClient(object):
     def create_key(self, key_nme):
         return self.agent_factory.get_key_agent(self.project_id).create(key_nme)
 
-    def get_nsd(self, nsd_id):
-        return self.agent_factory.get_ns_descriptor_agent(self.project_id).find(nsd_id)
-
-    def get_key(self, key_id):
-        return self.agent_factory.get_key_agent(self.project_id).find(key_id)
-
-    def get_package(self, package_id):
-        return json.loads(self.agent_factory.get_vnf_package_agent(self.project_id).find(package_id))
-
-    def delete_nsd(self, nsd_id):
-        self.agent_factory.get_ns_descriptor_agent(self.project_id).delete(nsd_id)
-
-    def delete_key(self, key_id):
-        self.agent_factory.get_key_agent(self.project_id).delete(key_id)
-
-    def delete_vnfd(self, vnfd_id):
-        self.agent_factory.get_vnf_descriptor_agent(self.project_id).delete(vnfd_id)
-
-    def get_nsr(self, nsr_id):
-        return self.agent_factory.get_ns_records_agent(self.project_id).find(nsr_id)
-
-    def get_vim(self, vim_id):
-        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find(vim_id))
-
-    def get_script(self, script_id):
-        return json.loads(self.agent_factory.get_script_agent(self.project_id).find(script_id))
-
-    def get_service(self, service_id):
-        return self.agent_factory.get_service_agent(self.project_id).find(service_id)
-
-    def get_user(self, user_id):
-        return self.agent_factory.get_user_agent(self.project_id).find(user_id)
-
-    def import_key(self, ssh_pub_key, name):
-
+    def import_key(self, name, ssh_pub_key):
         key_agent = self.agent_factory.get_key_agent(self.project_id)
         for key in json.loads(key_agent.find()):
             if key.get('name') == name:
@@ -203,6 +178,25 @@ class OBClient(object):
     def create_nsd_from_market(self, link):
         return self.agent_factory.get_market_agent(self.project_id).create(link)
 
+    def refresh_vim(self, vim_id):
+        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).refresh(vim_id))
+
+    ####################
+    ###### DELETE ######
+    ####################
+
+    def delete_nsr(self, nsr_id):
+        return self.agent_factory.get_ns_records_agent(self.project_id).delete(nsr_id)
+
+    def delete_nsd(self, nsd_id):
+        self.agent_factory.get_ns_descriptor_agent(self.project_id).delete(nsd_id)
+
+    def delete_key(self, key_id):
+        self.agent_factory.get_key_agent(self.project_id).delete(key_id)
+
+    def delete_vnfd(self, vnfd_id):
+        self.agent_factory.get_vnf_descriptor_agent(self.project_id).delete(vnfd_id)
+
     def delete_user(self, username):
         for u in json.loads(self.list_users()):
             if u.get('username') == username:
@@ -217,14 +211,36 @@ class OBClient(object):
     def delete_event(self, ob_event_id):
         self.agent_factory.get_event_agent(self.project_id).delete(ob_event_id)
 
-    def list_nsrs(self):
-        return json.loads(self.agent_factory.get_ns_records_agent(self.project_id).find())
-
     def delete_vim_instance(self, _vim_id):
         self.agent_factory.get_vim_instance_agent(self.project_id).delete(_vim_id)
 
     def delete_package(self, package_id):
         self.agent_factory.get_vnf_package_agent(self.project_id).delete(package_id)
 
-    def refresh_vim(self, vim_id):
-        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).refresh(vim_id))
+    ####################
+    ####### SHOW #######
+    ####################
+
+    def get_nsd(self, nsd_id):
+        return self.agent_factory.get_ns_descriptor_agent(self.project_id).find(nsd_id)
+
+    def get_key(self, key_id):
+        return self.agent_factory.get_key_agent(self.project_id).find(key_id)
+
+    def get_package(self, package_id):
+        return json.loads(self.agent_factory.get_vnf_package_agent(self.project_id).find(package_id))
+
+    def get_nsr(self, nsr_id):
+        return self.agent_factory.get_ns_records_agent(self.project_id).find(nsr_id)
+
+    def get_vim(self, vim_id):
+        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find(vim_id))
+
+    def get_script(self, script_id):
+        return json.loads(self.agent_factory.get_script_agent(self.project_id).find(script_id))
+
+    def get_service(self, service_id):
+        return self.agent_factory.get_service_agent(self.project_id).find(service_id)
+
+    def get_user(self, user_id):
+        return self.agent_factory.get_user_agent(self.project_id).find(user_id)

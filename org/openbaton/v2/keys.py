@@ -42,3 +42,15 @@ class Keys(BaseObCmd):
         return result_to_str(
             get_result_to_list(self.app.ob_client.list_keys(), keys=self.keys_to_list, _format=self.app.format),
             _format=self.app.format)
+
+    def import_key(self, params):
+        if len(params) < 2:
+            return "ERROR: missing <key-name> and <pub-key>"
+        key_name = params[0]
+        ssh_pub_key = params[1]
+        return self.app.ob_client.import_key(key_name, ssh_pub_key)
+
+    def handle_special_action(self, action, params):
+        if action == "import":
+            return self.import_key(params)
+        return super(BaseObCmd, self).handle_special_action(action, params)

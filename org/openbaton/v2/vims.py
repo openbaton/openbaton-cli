@@ -28,7 +28,7 @@ class Vims(BaseObCmd):
         if action == 'refresh':
             return self.refresh(params)
         else:
-            return None
+            return super(BaseObCmd, self).handle_special_action(action, params)
 
     def find(self, params):
         if not params:
