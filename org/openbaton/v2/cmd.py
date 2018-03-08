@@ -1,8 +1,8 @@
 import abc
+import six
 import os
 import sys
 import traceback
-from abc import ABC
 
 import cliff
 from cliff.app import App
@@ -14,7 +14,8 @@ from org.openbaton.sdk.client import OBClient
 from org.openbaton.v2.errors import WrongActionError
 
 
-class BaseObCmd(Command, ABC):
+@six.add_metaclass(abc.ABCMeta)
+class BaseObCmd(Command):
     parser = None
 
     @abc.abstractmethod
@@ -70,9 +71,8 @@ class BaseObCmd(Command, ABC):
         else:
             res = self.handle_special_action(action, params)
         if res:
-            self.app.stdout.write("%s\n"%res)
+            self.app.stdout.write("%s\n" % res)
             return
-
 
 
 class OpenBatonCmd(App):
@@ -164,6 +164,7 @@ class OpenBatonCmd(App):
         if err:
             if self.options.debug:
                 traceback.print_exc()
+
 
 def start_single_command():
     ob_cmd = OpenBatonCmd()
