@@ -5,8 +5,11 @@ from org.openbaton.v2.utils import get_result_to_list, get_result_to_show, parse
 
 
 class Projects(BaseObCmd):
-    """openbaton nsr [list|show|create|delete].
-
+    """Command to manage Projects. It allows to:
+        * show details of a specific Project passing an id
+        * list all saved Projects
+        * delete a specific Project passing an id
+        * create a specific Project passing a path to a file or directly the json content
     """
 
     log = logging.getLogger(__name__)
@@ -39,4 +42,4 @@ class Projects(BaseObCmd):
     def list(self, params=None):
         return result_to_str(
             get_result_to_list(self.app.ob_client.list_projects(), keys=self.keys_to_list, _format=self.app.format),
-            format=self.app.format)
+            _format=self.app.format)

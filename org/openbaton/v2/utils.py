@@ -31,7 +31,7 @@ def get_result_to_show(obj, excluded_keys, _format='table'):
                     if len(v) > 0:
                         tmp = []
                         if isinstance(v[0], dict):
-                            tmp.append(" value: \n")
+                            tmp.append(" values: \n")
                             tmp.extend(["- " + (x.get('ip') or x.get("id")) for x in v])
                         result.append([k, "\n".join(tmp)])
                 else:
@@ -43,7 +43,7 @@ def get_result_to_show(obj, excluded_keys, _format='table'):
                     else:
                         result.append([k, v])
 
-        return result
+        return sorted(result)
     elif _format == 'json':
         return obj
 
@@ -56,8 +56,8 @@ def parse_path_or_json(path_or_json):
         return json.loads(f.read())
 
 
-def result_to_str(result, format='table'):
-    if format == "table":
+def result_to_str(result, _format='table'):
+    if _format == "table":
         return tabulate.tabulate(result, headers="firstrow", tablefmt="grid")
-    elif format == "json":
+    elif _format == "json":
         return json.dumps(result, indent=4)

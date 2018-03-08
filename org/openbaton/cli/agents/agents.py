@@ -214,7 +214,7 @@ class VNFCInstanceAgent(BaseAgent):
 
 class KeyAgent(BaseAgent):
     def create(self, entity='', _id=None):
-        if os.path.exists(entity) and os.path.isfile(entity):  # import
+        if os.path.exists(entity) and os.path.isfile(entity):
             with open(entity, 'r') as f:
                 entity = f.read().replace('\n', '')
 

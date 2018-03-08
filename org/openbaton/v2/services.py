@@ -5,8 +5,11 @@ from org.openbaton.v2.utils import get_result_to_list, get_result_to_show, parse
 
 
 class Services(BaseObCmd):
-    """openbaton nsr [list|show|create|delete].
-
+    """Command to manage Services. It allows to:
+        * show details of a specific Service passing an id
+        * list all saved Services
+        * delete a specific Service passing an id
+        * create a specific Service passing a path to a file or directly the json content
     """
 
     log = logging.getLogger(__name__)
@@ -40,4 +43,4 @@ class Services(BaseObCmd):
     def list(self, params=None):
         return result_to_str(
             get_result_to_list(self.app.ob_client.list_services(), keys=self.keys_to_list, _format=self.app.format),
-            format=self.app.format)
+            _format=self.app.format)

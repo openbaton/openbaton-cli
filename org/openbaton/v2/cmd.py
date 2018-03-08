@@ -15,6 +15,8 @@ from org.openbaton.v2.errors import WrongActionError
 
 
 class BaseObCmd(Command, ABC):
+    parser = None
+
     @abc.abstractmethod
     def list(self):
         pass
@@ -31,25 +33,38 @@ class BaseObCmd(Command, ABC):
     def delete(self, params):
         pass
 
+    def help(self):
+        self.parser.print_help()
+
     def get_parser(self, prog_name):
         parser = super(BaseObCmd, self).get_parser(prog_name)
-        parser.add_argument("action", metavar="ACTION",
-                            help="the action you want to call. Possibilities are: \n" + str(ACTIONS))
-        parser.add_argument("params", help="The id, file or json", nargs='*')
+        parser.add_argument("action",
+                            metavar="<action>",
+                            help="the action you want to call. Possibilities are: \n" + str(ACTIONS),
+                            nargs='?',
+                            default='list')
+        parser.add_argument("params",
+                            metavar="<parameter>",
+                            help="The id, file or json",
+                            nargs='*')
+        self.parser = parser
         return parser
 
     def handle_special_action(self, action, params):
-        pass
+        raise WrongActionError("Action '%s' not known" % action)
 
     def take_action(self, parsed_args):
         action = parsed_args.action
         params = parsed_args.params
+        res = None
         if action == 'list':
             res = self.list()
         elif action == 'create':
             res = self.create(params)
         elif action == 'show':
             res = self.find(params)
+        elif action == 'help':
+            self.help()
         elif action == 'delete' or action == 'remove':
             res = self.delete(params)
         else:
@@ -57,7 +72,7 @@ class BaseObCmd(Command, ABC):
         if res:
             self.app.stdout.write("%s\n"%res)
             return
-        raise WrongActionError("Action '%s' not known" % action)
+
 
 
 class OpenBatonCmd(App):

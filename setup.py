@@ -47,6 +47,9 @@ setup(
             'package = org.openbaton.v2.packages:VnfPackages',
             'user = org.openbaton.v2.users:Users',
             'service = org.openbaton.v2.services:Services',
+            'market = org.openbaton.v2.market:Market',
+            'script = org.openbaton.v2.scripts:Scripts',
+            'key = org.openbaton.v2.keys:Keys',
         ]
     }
 )

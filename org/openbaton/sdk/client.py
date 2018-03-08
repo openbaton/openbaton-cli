@@ -107,6 +107,9 @@ class OBClient(object):
     def list_users(self):
         return json.loads(self.agent_factory.get_user_agent(self.project_id).find())
 
+    def list_keys(self):
+        return json.loads(self.agent_factory.get_key_agent(self.project_id).find())
+
     def list_event(self):
         return json.loads(self.agent_factory.get_event_agent(self.project_id).find())
 
@@ -140,20 +143,35 @@ class OBClient(object):
             nsd = json.dumps(nsd)
         return self.agent_factory.get_ns_descriptor_agent(self.project_id).create(nsd)
 
+    def create_key(self, key_nme):
+        return self.agent_factory.get_key_agent(self.project_id).create(key_nme)
+
     def get_nsd(self, nsd_id):
         return self.agent_factory.get_ns_descriptor_agent(self.project_id).find(nsd_id)
 
+    def get_key(self, key_id):
+        return self.agent_factory.get_key_agent(self.project_id).find(key_id)
+
     def get_package(self, package_id):
-        return self.agent_factory.get_vnf_package_agent(self.project_id).find(package_id)
+        return json.loads(self.agent_factory.get_vnf_package_agent(self.project_id).find(package_id))
 
     def delete_nsd(self, nsd_id):
         self.agent_factory.get_ns_descriptor_agent(self.project_id).delete(nsd_id)
+
+    def delete_key(self, key_id):
+        self.agent_factory.get_key_agent(self.project_id).delete(key_id)
 
     def delete_vnfd(self, vnfd_id):
         self.agent_factory.get_vnf_descriptor_agent(self.project_id).delete(vnfd_id)
 
     def get_nsr(self, nsr_id):
         return self.agent_factory.get_ns_records_agent(self.project_id).find(nsr_id)
+
+    def get_vim(self, vim_id):
+        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).find(vim_id))
+
+    def get_script(self, script_id):
+        return json.loads(self.agent_factory.get_script_agent(self.project_id).find(script_id))
 
     def get_service(self, service_id):
         return self.agent_factory.get_service_agent(self.project_id).find(service_id)
@@ -182,6 +200,9 @@ class OBClient(object):
     def create_nsd_from_csar(self, location):
         return self.agent_factory.get_csarnsd_agent(self.project_id).create(location)
 
+    def create_nsd_from_market(self, link):
+        return self.agent_factory.get_market_agent(self.project_id).create(link)
+
     def delete_user(self, username):
         for u in json.loads(self.list_users()):
             if u.get('username') == username:
@@ -204,3 +225,6 @@ class OBClient(object):
 
     def delete_package(self, package_id):
         self.agent_factory.get_vnf_package_agent(self.project_id).delete(package_id)
+
+    def refresh_vim(self, vim_id):
+        return json.loads(self.agent_factory.get_vim_instance_agent(self.project_id).refresh(vim_id))

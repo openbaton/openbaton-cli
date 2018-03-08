@@ -22,6 +22,13 @@ def _expired_token(content):
     return False
 
 
+def get_content_type(body):
+    if not body or isinstance(body, dict) or (
+                isinstance(body, str) and (body.startswith('{') or body.endswith('{'))):
+        return "application/json"
+    return "text/plain"
+
+
 class RestClient(object):
     def __init__(self, nfvo_ip="localhost", nfvo_port="8080", https=False, version=1, username=None, password=None,
                  project_id=None):
@@ -45,7 +52,6 @@ class RestClient(object):
         headers = {
             "Authorization": "Bearer %s" % self.token,
             "accept": "application/json",
-            "content-type": "application/json"
         }
         if self.project_id is not None:
             headers["project-id"] = self.project_id
@@ -66,7 +72,10 @@ class RestClient(object):
         if self.token is None:
             self.token = self._get_token()
         if headers is None:
-            headers = {"content-type": "application/json", "accept": "application/json"}
+            headers = {
+                "content-type": get_content_type(body),
+                # "accept": "application/json"
+            }
         if self.project_id is not None:
             headers["project-id"] = self.project_id
 
@@ -87,7 +96,7 @@ class RestClient(object):
         if headers is None:
             headers = {
                 "Authorization": "Bearer %s" % self.token,
-                "accept": "application/json",
+                # "accept": "application/json",
                 "project-id": self.project_id
             }
         files = {'file': ('file', _file, "multipart/form-data")}
@@ -102,7 +111,7 @@ class RestClient(object):
         if self.token is None:
             self.token = self._get_token()
         if headers is None:
-            headers = {"content-type": "application/json"}
+            headers = {"content-type": get_content_type(body)}
         if self.project_id is not None:
             headers["project-id"] = self.project_id
         headers["Authorization"] = "Bearer %s" % self.token
@@ -176,7 +185,7 @@ class RestClient(object):
     def check_answer(self, result):
         logger.debug("Response status is: %s" % result.status_code)
         logger.debug("Reason: %s" % result.reason)
-
+        content = None
         if result.status_code in WRONG_STATUS:
             message = None
             try:

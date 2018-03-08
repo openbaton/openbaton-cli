@@ -5,8 +5,11 @@ from org.openbaton.v2.utils import get_result_to_list, get_result_to_show, parse
 
 
 class VnfPackages(BaseObCmd):
-    """openbaton package [list|show|create|delete].
-
+    """Command to manage VNFPackages. It allows to:
+        * show details of a specific VNFPackage passing an id
+        * list all saved VNFPackages
+        * delete a specific VNFPackage passing an id
+        * create a specific VNFPackage passing a path to a file or directly the json content
     """
 
     log = logging.getLogger(__name__)
@@ -39,4 +42,4 @@ class VnfPackages(BaseObCmd):
     def list(self, params=None):
         return result_to_str(
             get_result_to_list(self.app.ob_client.list_packages(), keys=self.keys_to_list, _format=self.app.format),
-            format=self.app.format)
+            _format=self.app.format)

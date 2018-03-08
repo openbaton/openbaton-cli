@@ -5,8 +5,12 @@ from org.openbaton.v2.utils import get_result_to_list, get_result_to_show, parse
 
 
 class Events(BaseObCmd):
-    """openbaton nsr [list|show|create|delete].
+    """Command to manage event endpoints: it is possible to:
 
+        * show details of a specific event endpoint passing an id
+        * list all saved event endpoints
+        * delete a specific event endpoint passing an id
+        * create a specific event endpoint passing a path to a file or directly the json content
     """
 
     log = logging.getLogger(__name__)
@@ -18,16 +22,16 @@ class Events(BaseObCmd):
             return "ERROR: missing <event-id>"
         _id = params[0]
         return result_to_str(get_result_to_show(self.app.ob_client.get_event(_id),
-                                                     excluded_keys=self.keys_to_exclude,
-                                                     _format=self.app.format))
+                                                excluded_keys=self.keys_to_exclude,
+                                                _format=self.app.format))
 
     def create(self, params):
         if not params:
             return "ERROR: missing <event> or <path-to-json>"
         event = parse_path_or_json(params[0])
         return result_to_str(get_result_to_show(self.app.ob_client.create_event(event),
-                                                     excluded_keys=self.keys_to_exclude,
-                                                     _format=self.app.format))
+                                                excluded_keys=self.keys_to_exclude,
+                                                _format=self.app.format))
 
     def delete(self, params):
         if not params:
@@ -39,4 +43,4 @@ class Events(BaseObCmd):
     def list(self, params=None):
         return result_to_str(
             get_result_to_list(self.app.ob_client.list_events(), keys=self.keys_to_list, _format=self.app.format),
-            format=self.app.format)
+            _format=self.app.format)
