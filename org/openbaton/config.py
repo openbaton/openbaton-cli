@@ -19,7 +19,7 @@ AGENTS_ACTIONS = {
         "LIST_KEY": ["id", "name", "status", "task", "vendor", "version", ],
         "EXCLUDE_KEY": [],
         "UNSUPPORTED_ACTIONS": [],
-        "ADDITIONAL_ACTIONS": []
+        "ADDITIONAL_ACTIONS": ["update", "upgrade", "execute", "add", "resume", "restart"]
     },
     "vnfr": {
         "LIST_KEY": ["id", "name", "vendor", "version", "status"],

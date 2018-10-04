@@ -159,6 +159,24 @@ class NSRAgent(BaseAgent):
         entity = entity.strip()
         return json.loads(self._client.post(self.url + "/%s" % entity, json.dumps(json.loads(_id))))
 
+    def update(self, nsr_id='', vnfr_id='', _id="{}"):
+        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/update" % (nsr_id, vnfr_id), json.dumps(json.loads(_id))))
+
+    def upgrade(self, entity='', nsr_id='', vnfr_id='', _id="{}"):
+        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/upgrade" % (nsr_id, vnfr_id), entity, json.dumps(json.loads(_id))))
+
+    def restart(self, entity='', nsr_id='', vnfr_id='', _id="{}"):
+        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/restart" % (nsr_id, vnfr_id), entity, json.dumps(json.loads(_id))))
+
+    def execute(self, entity='', nsr_id='', vnfr_id='', _id="{}"):
+        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/execute-script" % (nsr_id, vnfr_id), entity, json.dumps(json.loads(_id))))
+
+    def add(self, entity='', nsr_id='', vnfd_id='', _id="{}"):
+        return json.loads(self._client.put(self.url + "/%s/vnfd/%s" % (nsr_id, vnfd_id), entity, json.dumps(json.loads(_id))))
+
+    def resume(self, nsr_id='', _id="{}"):
+        return json.loads(self._client.post(self.url + "/%s/resume" % (nsr_id), json.dumps(json.loads(_id))))
+
     def __init__(self, client, project_id):
         super(NSRAgent, self).__init__(client, "ns-records", 'nsr', project_id=project_id)
 
