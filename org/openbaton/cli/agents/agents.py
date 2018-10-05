@@ -160,22 +160,54 @@ class NSRAgent(BaseAgent):
         return json.loads(self._client.post(self.url + "/%s" % entity, json.dumps(json.loads(_id))))
 
     def update(self, nsr_id='', vnfr_id='', _id="{}"):
-        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/update" % (nsr_id, vnfr_id), json.dumps(json.loads(_id))))
+        vnfr= vnfr_id[0]
+        return (self._client.post(self.url + "/%s/vnfrecords/%s/update" % (nsr_id, vnfr), json.dumps(json.loads(_id))))
 
     def upgrade(self, entity='', nsr_id='', vnfr_id='', _id="{}"):
-        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/upgrade" % (nsr_id, vnfr_id), entity, json.dumps(json.loads(_id))))
+        nsr_id= entity[0]
+        vnfr_id = entity[1]
+        param=entity[2:]
+        if(param==()):
+            body = "{}"
+        else:
+            try:
+                body = param[0]
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+        return json.dumps(self._client.post(self.url + "/%s/vnfrecords/%s/upgrade" % (nsr_id, vnfr_id), body))
 
     def restart(self, entity='', nsr_id='', vnfr_id='', _id="{}"):
-        return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/restart" % (nsr_id, vnfr_id), entity, json.dumps(json.loads(_id))))
+        nsr_id= entity[0]
+        vnfr_id = entity[1]
+        param=entity[2:]
+        if(param==()):
+            body = "{}"
+        else:
+            try:
+                body = param[0]
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+        return self._client.post(self.url + "/%s/vnfrecords/%s/restart" % (nsr_id, vnfr_id), body)
 
     def execute(self, entity='', nsr_id='', vnfr_id='', _id="{}"):
+        vnfr= vnfr_id[0]
         return json.loads(self._client.post(self.url + "/%s/vnfrecords/%s/execute-script" % (nsr_id, vnfr_id), entity, json.dumps(json.loads(_id))))
 
     def add(self, entity='', nsr_id='', vnfd_id='', _id="{}"):
-        return json.loads(self._client.put(self.url + "/%s/vnfd/%s" % (nsr_id, vnfd_id), entity, json.dumps(json.loads(_id))))
+        nsr_id= entity[0]
+        vnfd_id = entity[1]
+        param=entity[2:]
+        if(param==()):
+            body = "{}"
+        else:
+            try:
+                body = param[0]
+            except:
+                raise SdkException('The passed JSON seems to be invalid.')
+        return self._client.put(self.url + "/%s/vnfd/%s" % (nsr_id, vnfd_id), body)
 
     def resume(self, nsr_id='', _id="{}"):
-        return json.loads(self._client.post(self.url + "/%s/resume" % (nsr_id), json.dumps(json.loads(_id))))
+        return (self._client.post(self.url + "/%s/resume" % (nsr_id), json.dumps(json.loads(_id))))
 
     def __init__(self, client, project_id):
         super(NSRAgent, self).__init__(client, "ns-records", 'nsr', project_id=project_id)
